@@ -7,6 +7,7 @@ Sebelum menulis atau memodifikasi kode apapun, SELALU jadikan dua dokumen beriku
 
 - **PRD** → `docs/PRD.md` — sumber kebenaran untuk fitur, alur, endpoint, dan spesifikasi non-fungsional
 - **Class Diagram** → `docs/CLASS_DIAGRAM.md` — sumber kebenaran untuk model data, relasi, struktur folder, dan Prisma schema
+- **API Documentation** → `swagger-spec.yaml` — dokumentasi lengkap endpoint API yang sudah siap digunakan (OpenAPI 3.0)
 
 Jika ada konflik antara instruksi user dan dokumen referensi, tanyakan klarifikasi sebelum mengimplementasi.
 
@@ -66,13 +67,30 @@ JANGAN mengganti atau menambah dependency di luar daftar ini tanpa konfirmasi us
 
 ## 6. Swagger / API Documentation
 
+- **API Spec** → `swagger-spec.yaml` — dokumentasi OpenAPI 3.0 yang sudah lengkap dan siap digunakan sebagai referensi endpoint
 - Setiap **Controller** WAJIB didekorasi dengan `@ApiTags('nama-modul')`
 - Setiap **endpoint** WAJIB memiliki `@ApiOperation({ summary: '...' })`
 - Setiap **endpoint** WAJIB mendokumentasikan semua kemungkinan response dengan `@ApiResponse`
 - Endpoint yang memerlukan autentikasi WAJIB didekorasi dengan `@ApiBearerAuth()`
 - Setiap **DTO** WAJIB menggunakan `@ApiProperty()` atau `@ApiPropertyOptional()` pada semua field
 - Endpoint upload file WAJIB menggunakan `@ApiConsumes('multipart/form-data')`
-- Lihat `docs/PRD.md` Section 13 untuk konvensi lengkap
+- Lihat `docs/PRD.md` Section 13 dan `swagger-spec.yaml` untuk konvensi lengkap
+
+### 6.1 Referensi API Endpoint (dari swagger-spec.yaml)
+
+**Endpoint yang sudah terdokumentasi:**
+- `POST /struk/scan` — Scan struk dengan OCR dan AI (multipart/form-data)
+- `GET /struk` — Ambil daftar struk pengguna (query: bulan, tahun)
+- `GET /struk/{id}` — Ambil detail struk berdasarkan ID
+- `PATCH /struk/{id}` — Update struk
+- `DELETE /struk/{id}` — Hapus struk
+- Dan endpoint lainnya di semua modul (auth, pengeluaran, pemasukan, kategori, notifikasi, dashboard)
+
+**Gunakan `swagger-spec.yaml` sebagai single source of truth** untuk:
+- Parameter request (query, path, body)
+- Response schemas dan status codes
+- Authentication requirements
+- Content types (application/json, multipart/form-data)
 
 ---
 
@@ -133,6 +151,32 @@ Ikuti alur berikut secara ketat (lihat `docs/PRD.md` Section 8.1):
 - Swagger HANYA aktif jika `SWAGGER_ENABLED=true` di environment variable
 - Semua response API menggunakan format JSON konsisten dengan `TransformInterceptor`
 - Komentar kode TIDAK perlu ditambahkan kecuali diminta user secara eksplisit
+- Setelah selesai menjalankan command terminal, **HENTIKAN semua proses terminal yang berjalan** untuk menghindari resource waste dan konflik proses
+
+### 11.1 Terminal & Background Task Cleanup (CRITICAL)
+
+**WAJIB HENTIKAN** semua terminal dan background task setelah setiap prompt selesai:
+
+```bash
+# Commands untuk cleanup (gunakan sesuai kebutuhan)
+pkill -f "node|npm|nest"    # Kill Node.js/NestJS processes
+killall node                 # Kill all node processes
+ctrl+c                       # Stop foreground process
+```
+
+**Rule ketat:**
+- Jika menjalankan `npm run start:dev` → Hentikan dengan `Ctrl+C` atau `killall node` setelah selesai
+- Jika menjalankan `npx prisma studio` → Hentikan setelah selesai inspect
+- Jika menjalankan test watch mode → Hentikan dengan `Ctrl+C`
+- Jika ada background process (daemon, watch) → Kill explicitly
+- **TIDAK BOLEH** membiarkan process berjalan setelah prompt selesai
+
+**Consequences:**
+- Resource waste (RAM, CPU)
+- Port conflicts (3000, 5555, dll)
+- Database connection leaks
+- File lock issues
+- Performance degradation
 
 ---
 

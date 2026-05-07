@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum JenisKategori {
+  PENGELUARAN
+  PEMASUKAN
+  KEDUANYA
+}
+
+model Pengguna {
+  id                    String                  @id @default(uuid())
+  email                 String                  @unique
+  namaLengkap           String                  @map("nama_lengkap")
+  fotoProfilUrl         String?                 @map("foto_profil_url")
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  preferensiNotifikasi  PreferensiNotifikasi[]
+  kategoris             Kategori[]
+  struks                Struk[]
+  pengeluarans          Pengeluaran[]
+  pemasukas             Pemasukan[]
+
+  @@map("pengguna")
+}
+
+model PreferensiNotifikasi {
+  id                String    @id @default(uuid())
+  penggunaId        String    @map("pengguna_id")
+  hariAktif         String[]  @map("hari_aktif")
+  jamNotifikasi     String    @map("jam_notifikasi")
+  aktif             Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  pengguna          Pengguna  @relation(fields: [penggunaId], references: [id], onDelete: Cascade)
+
+  @@map("preferensi_notifikasi")
+}
+
+model Kategori {
+  id                String          @id @default(uuid())
+  penggunaId        String?         @map("pengguna_id")
+  nama              String
+  jenis             JenisKategori   @default(KEDUANYA)
+  adalahPreset      Boolean         @default(false) @map("adalah_preset")
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  pengguna          Pengguna?       @relation(fields: [penggunaId], references: [id], onDelete: SetNull)
+  itemStruks        ItemStruk[]
+  pengeluarans      Pengeluaran[]
+  pemasukas         Pemasukan[]
+  struks            Struk[]
+
+  @@map("kategori")
+}
+
+model Struk {
+  id                  String        @id @default(uuid())
+  penggunaId          String        @map("pengguna_id")
+  kategoriId          String?       @map("kategori_id")
+  namaToko            String        @map("nama_toko")
+  tanggalBelanja      DateTime      @map("tanggal_belanja") @db.Date
+  total               Decimal       @db.Decimal(15, 2)
+  gambarUrl           String?       @map("gambar_url")
+  gambarStoragePath   String?       @map("gambar_storage_path")
+  rawTextOcr          String?       @map("raw_text_ocr") @db.Text
+  sudahDikonfirmasi   Boolean       @default(false) @map("sudah_dikonfirmasi")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  pengguna            Pengguna      @relation(fields: [penggunaId], references: [id], onDelete: Cascade)
+  kategori            Kategori?     @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
+  itemStruks          ItemStruk[]
+  pengeluaran         Pengeluaran?
+
+  @@map("struk")
+}
+
+model ItemStruk {
+  id                String      @id @default(uuid())
+  strukId           String      @map("struk_id")
+  kategoriId        String?     @map("kategori_id")
+  namaItem          String      @map("nama_item")
+  jumlah            Int
+  hargaSatuan       Decimal     @map("harga_satuan") @db.Decimal(15, 2)
+  subtotal          Decimal     @db.Decimal(15, 2)
+  createdAt         DateTime    @default(now())
+
+  struk             Struk       @relation(fields: [strukId], references: [id], onDelete: Cascade)
+  kategori          Kategori?   @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
+
+  @@map("item_struk")
+}
+
+model Pengeluaran {
+  id                String      @id @default(uuid())
+  penggunaId        String      @map("pengguna_id")
+  strukId           String?     @unique @map("struk_id")
+  kategoriId        String?     @map("kategori_id")
+  deskripsi         String
+  jumlah            Decimal     @db.Decimal(15, 2)
+  tanggal           DateTime    @db.Date
+  catatan           String?     @db.Text
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  pengguna          Pengguna            @relation(fields: [penggunaId], references: [id], onDelete: Cascade)
+  struk             Struk?              @relation(fields: [strukId], references: [id], onDelete: SetNull)
+  kategori          Kategori?           @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
+
+  @@map("pengeluaran")
+}
+
+model Pemasukan {
+  id                String      @id @default(uuid())
+  penggunaId        String      @map("pengguna_id")
+  kategoriId        String?     @map("kategori_id")
+  deskripsi         String
+  jumlah            Decimal     @db.Decimal(15, 2)
+  tanggal           DateTime    @db.Date
+  catatan           String?     @db.Text
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  pengguna          Pengguna    @relation(fields: [penggunaId], references: [id], onDelete: Cascade)
+  kategori          Kategori?   @relation(fields: [kategoriId], references: [id], onDelete: SetNull)
+
+  @@map("pemasukan")
+}
