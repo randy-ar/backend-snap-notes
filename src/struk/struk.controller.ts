@@ -16,8 +16,6 @@ interface RequestWithUser extends Request {
 
 @ApiTags('struk')
 @Controller('struk')
-@UseGuards(SupabaseAuthGuard)
-@ApiBearerAuth()
 export class StrukController {
   constructor(private readonly strukService: StrukService) {}
 
@@ -38,10 +36,16 @@ export class StrukController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: ScanStrukDto,
   ): Promise<StrukResponseDto> {
-    return this.strukService.scanStruk(req.user.id, file, dto);
+    const penggunaId = req.user?.id || dto.penggunaId;
+    if (!penggunaId) {
+      throw new Error('penggunaId diperlukan');
+    }
+    return this.strukService.scanStruk(penggunaId, file, dto);
   }
 
   @Get()
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Ambil daftar struk pengguna' })
   @ApiResponse({ status: 200, description: 'Daftar struk', type: [StrukResponseDto] })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -58,6 +62,8 @@ export class StrukController {
   }
 
   @Get(':id')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Ambil detail struk berdasarkan ID' })
   @ApiResponse({ status: 200, description: 'Detail struk', type: StrukResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -71,6 +77,8 @@ export class StrukController {
   }
 
   @Patch(':id')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update data struk' })
   @ApiResponse({ status: 200, description: 'Struk berhasil diupdate', type: StrukResponseDto })
   @ApiResponse({ status: 400, description: 'Data tidak valid' })
@@ -86,6 +94,8 @@ export class StrukController {
   }
 
   @Delete(':id')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Hapus struk beserta gambar dan pengeluaran terkait' })
   @ApiResponse({ status: 200, description: 'Struk berhasil dihapus' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -99,6 +109,8 @@ export class StrukController {
   }
 
   @Post(':id/konfirmasi')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Konfirmasi struk sudah ditinjau' })
   @ApiResponse({ status: 200, description: 'Struk berhasil dikonfirmasi', type: StrukResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

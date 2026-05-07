@@ -24,10 +24,8 @@ paths:
           description: Unauthorized
         '503':
           description: Service AI tidak tersedia
-      security: &ref_0
-        - bearer: []
       summary: Scan struk dengan OCR dan AI
-      tags: &ref_1
+      tags: &ref_0
         - struk
   /struk:
     get:
@@ -54,9 +52,10 @@ paths:
                   $ref: '#/components/schemas/StrukResponseDto'
         '401':
           description: Unauthorized
-      security: *ref_0
+      security:
+        - bearer: []
       summary: Ambil daftar struk pengguna
-      tags: *ref_1
+      tags: *ref_0
   /struk/{id}:
     get:
       operationId: StrukController_getDetailStruk
@@ -79,9 +78,10 @@ paths:
           description: Forbidden - bukan milik pengguna
         '404':
           description: Struk tidak ditemukan
-      security: *ref_0
+      security:
+        - bearer: []
       summary: Ambil detail struk berdasarkan ID
-      tags: *ref_1
+      tags: *ref_0
     patch:
       operationId: StrukController_updateStruk
       parameters:
@@ -111,9 +111,10 @@ paths:
           description: Forbidden - bukan milik pengguna
         '404':
           description: Struk tidak ditemukan
-      security: *ref_0
+      security:
+        - bearer: []
       summary: Update data struk
-      tags: *ref_1
+      tags: *ref_0
     delete:
       operationId: StrukController_hapusStruk
       parameters:
@@ -131,9 +132,10 @@ paths:
           description: Forbidden - bukan milik pengguna
         '404':
           description: Struk tidak ditemukan
-      security: *ref_0
+      security:
+        - bearer: []
       summary: Hapus struk beserta gambar dan pengeluaran terkait
-      tags: *ref_1
+      tags: *ref_0
   /struk/{id}/konfirmasi:
     post:
       operationId: StrukController_konfirmasiStruk
@@ -156,9 +158,10 @@ paths:
           description: Forbidden - bukan milik pengguna
         '404':
           description: Struk tidak ditemukan
-      security: *ref_0
+      security:
+        - bearer: []
       summary: Konfirmasi struk sudah ditinjau
-      tags: *ref_1
+      tags: *ref_0
 info:
   title: Snap Notes API
   description: API untuk aplikasi pencatat pengeluaran dari struk belanja
@@ -179,6 +182,9 @@ components:
         rawText:
           type: string
           description: Teks hasil OCR dari Google ML Kit
+        penggunaId:
+          type: string
+          description: ID pengguna (opsional jika endpoint public)
       required:
         - rawText
     ItemStrukResponseDto:
