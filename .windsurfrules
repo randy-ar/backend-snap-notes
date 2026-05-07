@@ -207,3 +207,39 @@ Aktif saat bekerja di root level, konfigurasi deployment, dan CI/CD:
 - Konfigurasi CI/CD pipeline
 - Pastikan security best practices diikuti
 - Monitor dan optimasi deployment
+
+---
+
+## 13. Standarisasi Commit Message
+
+Gunakan Conventional Commits format untuk semua commit. Format: `<type>(<scope>): <subject>`
+
+### 13.1 Type yang digunakan
+
+**fix:** — Perbaikan bug
+- Digunakan untuk memperbaiki bug yang ada
+- Contoh: `fix(auth): perbaiki validasi email pada endpoint daftar`
+- Contoh: `fix(struk): perbaiki error parsing AI saat rawText kosong`
+
+**chore:** — Perubahan maintenance
+- Digunakan untuk perubahan yang tidak mempengaruhi fungsionalitas utama
+- Update dependency, refactor kode, update konfigurasi
+- Contoh: `chore: update package.json ke versi terbaru`
+- Contoh: `chore(prisma): refactor query untuk optimasi performance`
+
+**feat:** — Fitur baru
+- Digunakan untuk menambahkan fitur baru
+- Contoh: `feat(struk): tambahkan endpoint scan struk dengan OCR`
+- Contoh: `feat(notifikasi): tambahkan preferensi notifikasi personalisasi`
+
+**deploy:** — Deployment dan konfigurasi
+- Digunakan untuk perubahan terkait deployment, environment, CI/CD
+- Contoh: `deploy: konfigurasi environment variables untuk Vercel`
+- Contoh: `deploy: setup database migration untuk production`
+
+### 13.2 Aturan tambahan
+- Subject ditulis dalam **Bahasa Indonesia** dengan huruf kecil
+- Subject tidak diakhiri dengan titik
+- Gunakan imperative mood (tambahkan, perbaiki, hapus, bukan menambahkan, memperbaiki, menghapus)
+- Body commit (jika ada) juga dalam Bahasa Indonesia
+- Scope bersifat opsional, gunakan nama modul jika relevan (auth, struk, pengeluaran, dll)

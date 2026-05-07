@@ -19,7 +19,7 @@ const bootstrap = async () => {
     );
     const configService = app.get(ConfigService);
 
-    app.setGlobalPrefix('api');
+    // Remove global prefix since Vercel already routes through /api directory
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
       transform: true,
@@ -37,7 +37,7 @@ const bootstrap = async () => {
         .addBearerAuth()
         .build();
       const document = SwaggerModule.createDocument(app, config);
-      SwaggerModule.setup('api/docs', app, document);
+      SwaggerModule.setup('docs', app, document);
     }
 
     await app.init();
