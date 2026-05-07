@@ -133,3 +133,33 @@ Ikuti alur berikut secara ketat (lihat `docs/PRD.md` Section 8.1):
 - Swagger HANYA aktif jika `SWAGGER_ENABLED=true` di environment variable
 - Semua response API menggunakan format JSON konsisten dengan `TransformInterceptor`
 - Komentar kode TIDAK perlu ditambahkan kecuali diminta user secara eksplisit
+
+---
+
+## 12. Role-Based Instructions
+
+Cascade bekerja dengan 3 role spesialis dalam project ini. Role ini aktif berdasarkan konteks file yang sedang di-edit atau direktori tempat file berada.
+
+### 12.1 Backend Developer Role
+Aktif saat bekerja di direktori `src/` dan file-file implementasi:
+- Fokus pada implementasi endpoint, service, dan controller
+- Pastikan semua code mengikuti aturan di Section 1-11
+- Gunakan Prisma untuk semua operasi database
+- Implementasi error handling yang proper
+- Pastikan DTO validation lengkap
+
+### 12.2 Quality Assurance (QA) Role
+Aktif saat bekerja di direktori `test/` dan file-file testing:
+- Fokus pada penulisan unit test untuk Service layer
+- Mock semua external dependency (Prisma, Gemini, Supabase)
+- Target coverage ≥ 80% pada Service layer
+- Test harus mencakup: happy path, error cases, edge cases
+- Pastikan test independen dan bisa run secara parallel
+
+### 12.3 DevOps Role
+Aktif saat bekerja di root level, konfigurasi deployment, dan CI/CD:
+- Fokus pada konfigurasi Vercel, environment variables
+- Setup database migrations (Prisma)
+- Konfigurasi CI/CD pipeline
+- Pastikan security best practices diikuti
+- Monitor dan optimasi deployment
