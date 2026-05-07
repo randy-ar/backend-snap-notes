@@ -58,8 +58,8 @@ export class AuthService {
       password: dto.password,
     });
 
-    if (authError || !authData.user) {
-      throw new UnauthorizedException('Email atau password salah');
+    if (authError || !authData.user || !authData.session) {
+      throw new UnauthorizedException('Email atau password salah, atau sesi tidak dapat dibuat. Pastikan email telah dikonfirmasi.');
     }
 
     const pengguna = await this.prisma.pengguna.findUnique({

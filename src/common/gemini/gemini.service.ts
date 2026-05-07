@@ -29,7 +29,7 @@ export class GeminiService {
       throw new Error('GEMINI_API_KEY harus diatur di environment variables');
     }
     this.genAI = new GoogleGenAI({ apiKey });
-    this.model = 'gemini-2.0-flash';
+    this.model = 'gemini-2.5-flash';
   }
 
   async parseStrukOCR(rawText: string): Promise<ParsedStrukDto> {
