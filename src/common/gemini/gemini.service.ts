@@ -35,11 +35,17 @@ export class GeminiService {
   async parseStrukOCR(rawText: string): Promise<ParsedStrukDto> {
     try {
       const prompt = this.buatPrompt(rawText);
-      
-      const response = await this.genAI.models.generateContent({
+
+      const geminiPromise = this.genAI.models.generateContent({
         model: this.model,
         contents: prompt,
       });
+
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Gemini AI timeout')), 25000);
+      });
+
+      const response = await Promise.race([geminiPromise, timeoutPromise]);
 
       const text = response.text;
       if (!text) {
@@ -50,6 +56,9 @@ export class GeminiService {
     } catch (error) {
       if (error instanceof ServiceUnavailableException || error instanceof UnprocessableEntityException) {
         throw error;
+      }
+      if (error.message === 'Gemini AI timeout') {
+        throw new ServiceUnavailableException('Gemini AI timeout - coba lagi dengan struk yang lebih jelas');
       }
       throw new ServiceUnavailableException(`Gemini AI error: ${error.message}`);
     }

@@ -15,8 +15,10 @@ export class StrukService {
   ) {}
 
   async scanStruk(penggunaId: string, file: Express.Multer.File | undefined, dto: ScanStrukDto): Promise<StrukResponseDto> {
+    const startTime = Date.now();
+
     let parsedData: ParsedStrukDto;
-    
+
     try {
       parsedData = await this.geminiService.parseStrukOCR(dto.rawText);
     } catch (error) {
@@ -27,7 +29,7 @@ export class StrukService {
     }
 
     let storageResult: { path: string; publicUrl: string } | null = null;
-    
+
     if (file) {
       try {
         storageResult = await this.storageService.uploadGambarStruk(file.buffer, file.originalname);
@@ -111,6 +113,9 @@ export class StrukService {
 
       return { ...createdStruk, itemStruks: items };
     });
+
+    const endTime = Date.now();
+    console.log(`[scanStruk] Completed in ${endTime - startTime}ms for penggunaId: ${penggunaId}`);
 
     return this.mapToResponseDto(struk);
   }
