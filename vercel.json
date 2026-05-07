@@ -1,9 +1,15 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "framework": null,
   "installCommand": "npm install",
-  "maxDuration": 60,
+  "fluid": true,
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
     {
       "source": "/(.*)",
