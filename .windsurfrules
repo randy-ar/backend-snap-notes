@@ -1,0 +1,135 @@
+# Windsurf Rules — Snap Notes Backend
+# Semua aturan ini WAJIB dipatuhi oleh Cascade saat mengerjakan project ini.
+
+## 1. Dokumen Referensi Utama
+
+Sebelum menulis atau memodifikasi kode apapun, SELALU jadikan dua dokumen berikut sebagai acuan:
+
+- **PRD** → `docs/PRD.md` — sumber kebenaran untuk fitur, alur, endpoint, dan spesifikasi non-fungsional
+- **Class Diagram** → `docs/CLASS_DIAGRAM.md` — sumber kebenaran untuk model data, relasi, struktur folder, dan Prisma schema
+
+Jika ada konflik antara instruksi user dan dokumen referensi, tanyakan klarifikasi sebelum mengimplementasi.
+
+---
+
+## 2. Arsitektur & Struktur Folder
+
+- Ikuti struktur folder NestJS yang telah didefinisikan di `docs/CLASS_DIAGRAM.md` Section 5
+- Setiap fitur memiliki modul sendiri: `auth`, `struk`, `pengeluaran`, `pemasukan`, `kategori`, `notifikasi`, `dashboard`
+- Service bersama (Gemini, Storage, Supabase) diletakkan di `src/common/`
+- JANGAN membuat file di luar struktur yang sudah ditetapkan tanpa alasan yang jelas
+
+---
+
+## 3. Model Data & Database
+
+- Gunakan **Prisma ORM** untuk semua operasi database — JANGAN query raw SQL langsung
+- Nama model, tabel, dan kolom bisnis utama menggunakan **Bahasa Indonesia** sesuai `docs/CLASS_DIAGRAM.md`
+- Metadata teknis menggunakan Bahasa Inggris: `id`, `createdAt`, `updatedAt`, `penggunaId`, dll
+- Field `@map()` di Prisma menggunakan snake_case untuk nama kolom di database
+- Relasi antar model HARUS sesuai dengan ERD di `docs/CLASS_DIAGRAM.md` Section 1
+- Schema Prisma final ada di `docs/CLASS_DIAGRAM.md` Section 4 — jadikan ini referensi utama
+
+### Model yang tersedia:
+`Pengguna`, `PreferensiNotifikasi`, `Kategori`, `Struk`, `ItemStruk`, `Pengeluaran`, `Pemasukan`
+
+---
+
+## 4. Tech Stack — WAJIB digunakan
+
+| Komponen | Teknologi |
+|----------|-----------|
+| Framework | NestJS (TypeScript) |
+| ORM | Prisma |
+| Database | PostgreSQL via Supabase |
+| Auth | Supabase Auth (email/password) |
+| Storage | Supabase Storage |
+| AI Parsing | Google Gemini AI (`@google/genai`) |
+| API Docs | `@nestjs/swagger` + `swagger-ui-express` |
+| Testing | Jest + `@nestjs/testing` |
+| Deployment | Vercel |
+
+JANGAN mengganti atau menambah dependency di luar daftar ini tanpa konfirmasi user terlebih dahulu.
+
+---
+
+## 5. Konvensi Kode TypeScript
+
+- Semua kode ditulis dengan **TypeScript strict** — hindari penggunaan `any`
+- Gunakan `class-validator` dan `class-transformer` untuk validasi DTO
+- Setiap endpoint WAJIB memiliki DTO request dan response yang terpisah
+- Gunakan `@Injectable()` untuk semua service
+- Error handling menggunakan NestJS built-in exceptions: `NotFoundException`, `ForbiddenException`, `UnauthorizedException`, `ConflictException`, `UnprocessableEntityException`, dll
+- Pesan error ditulis dalam **Bahasa Indonesia**
+
+---
+
+## 6. Swagger / API Documentation
+
+- Setiap **Controller** WAJIB didekorasi dengan `@ApiTags('nama-modul')`
+- Setiap **endpoint** WAJIB memiliki `@ApiOperation({ summary: '...' })`
+- Setiap **endpoint** WAJIB mendokumentasikan semua kemungkinan response dengan `@ApiResponse`
+- Endpoint yang memerlukan autentikasi WAJIB didekorasi dengan `@ApiBearerAuth()`
+- Setiap **DTO** WAJIB menggunakan `@ApiProperty()` atau `@ApiPropertyOptional()` pada semua field
+- Endpoint upload file WAJIB menggunakan `@ApiConsumes('multipart/form-data')`
+- Lihat `docs/PRD.md` Section 13 untuk konvensi lengkap
+
+---
+
+## 7. Unit Testing
+
+- Setiap **Service** WAJIB memiliki file `*.service.spec.ts` di folder modul yang sama
+- Test HANYA pada layer **Service** — bukan Controller (kecuali diminta)
+- Semua dependency eksternal (Prisma, Gemini AI, Supabase Auth, Storage) WAJIB di-mock menggunakan `jest.fn()`
+- Setiap test harus mencakup: happy path, `NotFoundException`, `ForbiddenException`, dan skenario error AI/external service
+- Target coverage: **≥ 80%** pada layer Service
+- Lihat `docs/PRD.md` Section 14 untuk daftar test case per modul
+
+---
+
+## 8. Autentikasi & Keamanan
+
+- Semua endpoint (kecuali `POST /auth/daftar` dan `POST /auth/masuk`) WAJIB dilindungi oleh `SupabaseAuthGuard`
+- JWT token diambil dari header `Authorization: Bearer <token>`
+- `penggunaId` diambil dari JWT payload — JANGAN menerima `penggunaId` dari request body
+- Validasi kepemilikan resource: pastikan resource yang diakses adalah milik pengguna yang sedang login
+
+---
+
+## 9. Endpoint & Fitur
+
+Daftar lengkap endpoint ada di `docs/PRD.md` Section 7. Ringkasan modul:
+
+- **`/auth`** — daftar, masuk, keluar, refresh, profil
+- **`/struk`** — scan struk (OCR+AI), CRUD struk
+- **`/pengeluaran`** — CRUD pengeluaran (manual & dari struk)
+- **`/pemasukan`** — CRUD pemasukan
+- **`/kategori`** — daftar preset+custom, tambah/edit/hapus custom
+- **`/notifikasi`** — get/simpan/update preferensi notifikasi
+- **`/dashboard`** — ringkasan, kalender, tren, per-kategori
+
+JANGAN menambah endpoint di luar daftar ini tanpa konfirmasi user.
+
+---
+
+## 10. Alur Scan Struk (Fitur Utama)
+
+Ikuti alur berikut secara ketat (lihat `docs/PRD.md` Section 8.1):
+
+1. Client mengirim `rawText` (hasil OCR Google ML Kit) + file gambar
+2. Server upload gambar ke **Supabase Storage** → dapatkan URL publik
+3. Server buat prompt dari `rawText` → kirim ke **Gemini AI**
+4. Validasi response Gemini: pastikan JSON valid sebelum disimpan
+5. Simpan `Struk` + array `ItemStruk` ke database via Prisma
+6. Buat record `Pengeluaran` yang terhubung ke `Struk` tersebut
+7. Return data struk + items ke client
+
+---
+
+## 11. Aturan Tambahan
+
+- JANGAN hardcode API key, URL, atau credential — selalu gunakan environment variable
+- File `.env` TIDAK boleh di-commit ke git (sudah ada di `.gitignore`)
+- Swagger HANYA aktif jika `SWAGGER_ENABLED=true` di environment variable
+- Semua response API menggunakan format JSON konsisten dengan `TransformInterceptor`
+- Komentar kode TIDAK perlu ditambahkan kecuali diminta user secara eksplisit
