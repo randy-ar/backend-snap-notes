@@ -20,6 +20,8 @@ export class StrukController {
   constructor(private readonly strukService: StrukService) {}
 
   @Post('scan')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Scan struk dengan OCR dan AI' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -36,11 +38,7 @@ export class StrukController {
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: ScanStrukDto,
   ): Promise<StrukResponseDto> {
-    const penggunaId = req.user?.id || dto.penggunaId;
-    if (!penggunaId) {
-      throw new Error('penggunaId diperlukan');
-    }
-    return this.strukService.scanStruk(penggunaId, file, dto);
+    return this.strukService.scanStruk(req.user.id, file, dto);
   }
 
   @Get()
