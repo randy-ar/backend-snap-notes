@@ -64,6 +64,7 @@ export class GeminiService {
       const response = await Promise.race([geminiPromise, timeoutPromise]);
 
       const text = response.text;
+      console.log('[Gemini AI] Raw response:', text);
       if (!text) {
         throw new ServiceUnavailableException('Gemini AI tidak memberikan response');
       }
