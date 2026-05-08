@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 import { SupabaseService } from '../../common/supabase/supabase.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 interface RequestWithUser extends Request {
   user: {
@@ -11,7 +12,10 @@ interface RequestWithUser extends Request {
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
-  constructor(private supabaseService: SupabaseService) {}
+  constructor(
+    private supabaseService: SupabaseService,
+    private prisma: PrismaService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithUser>();
@@ -35,9 +39,31 @@ export class SupabaseAuthGuard implements CanActivate {
         throw new UnauthorizedException('Token tidak valid atau sudah expired');
       }
 
+      // Cek apakah user ada di database Prisma
+      let pengguna = await this.prisma.pengguna.findUnique({
+        where: { id: user.id },
+      });
+
+      // Jika user tidak ada, buat user baru
+      if (!pengguna) {
+        const namaLengkap =
+          user.user_metadata?.full_name ||
+          user.user_metadata?.name ||
+          user.email?.split('@')[0] ||
+          'Pengguna';
+
+        pengguna = await this.prisma.pengguna.create({
+          data: {
+            id: user.id,
+            email: user.email || '',
+            namaLengkap: namaLengkap,
+          },
+        });
+      }
+
       request.user = {
-        id: user.id,
-        email: user.email || '',
+        id: pengguna.id,
+        email: pengguna.email,
       };
 
       return true;
