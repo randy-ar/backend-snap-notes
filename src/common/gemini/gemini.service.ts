@@ -18,6 +18,22 @@ export interface ParsedStrukDto {
   item: ParsedItemDto[];
 }
 
+interface OcrLine {
+  lineIndex: number;
+  text: string;
+  boundingBox: {
+    left: number;
+    top: number;
+    right: number;
+    bottom: number;
+  };
+}
+
+interface ImageSize {
+  width: number;
+  height: number;
+}
+
 @Injectable()
 export class GeminiService {
   private genAI: GoogleGenAI;
@@ -32,9 +48,9 @@ export class GeminiService {
     this.model = 'gemini-2.5-flash';
   }
 
-  async parseStrukOCR(rawText: string): Promise<ParsedStrukDto> {
+  async parseStrukOCR(rawText: string, lines?: OcrLine[], imageSize?: ImageSize): Promise<ParsedStrukDto> {
     try {
-      const prompt = this.buatPrompt(rawText);
+      const prompt = this.buatPrompt(rawText, lines, imageSize);
 
       const geminiPromise = this.genAI.models.generateContent({
         model: this.model,
@@ -64,13 +80,39 @@ export class GeminiService {
     }
   }
 
-  private buatPrompt(rawText: string): string {
+  private buatPrompt(rawText: string, lines?: OcrLine[], imageSize?: ImageSize): string {
+    let layoutInfo = '';
+
+    if (lines && lines.length > 0 && imageSize) {
+      const lineInfo = lines.map((line) => {
+        const centerX = (line.boundingBox.left + line.boundingBox.right) / 2;
+        const centerY = (line.boundingBox.top + line.boundingBox.bottom) / 2;
+        const relativeX = (centerX / imageSize.width * 100).toFixed(1);
+        const relativeY = (centerY / imageSize.height * 100).toFixed(1);
+        const textPreview = line.text.substring(0, 40);
+        const ellipsis = line.text.length > 40 ? '...' : '';
+        return `[${line.lineIndex}] X:${relativeX}% Y:${relativeY}% | "${textPreview}${ellipsis}"`;
+      }).join('\n');
+
+      layoutInfo = `
+
+INFO LAYOUT LINE POSISI (persentase dari ukuran gambar ${imageSize.width}x${imageSize.height}px):
+${lineInfo}
+
+Analisis posisi:
+- X 0-30% = Kolom kiri (biasanya nama item/produk)
+- X 30-60% = Kolom tengah (biasanya qty/jumlah)
+- X 60-100% = Kolom kanan (biasanya harga/total)
+- Y urutan dari atas ke bawah menunjukkan urutan item
+- lineIndex menunjukkan urutan baris dari atas ke bawah`;
+    }
+
     return `Anda adalah parser struk belanja. Analisis teks OCR berikut dan ekstrak informasi struk ke format JSON.
 
 TEKS OCR:
 """
 ${rawText}
-"""
+"""${layoutInfo}
 
 Ekstrak informasi berikut dalam format JSON:
 {
@@ -90,12 +132,14 @@ Ekstrak informasi berikut dalam format JSON:
 }
 
 Aturan:
-1. Tanggal harus dalam format YYYY-MM-DD
+1. Tanggal harus dalam format YYYY-MM-DD (konversi dari format Indonesia DD-MM-YYYY atau DD/MM/YYYY)
 2. Total adalah angka total keseluruhan struk (bukan subtotal item)
-3. Harga dalam format number tanpa pemisah ribuan
+3. Harga dalam format number tanpa pemisah ribuan (contoh: 10500 bukan 10.500)
 4. Kategori bisa: Makanan & Minuman, Transportasi, Kesehatan, Pendidikan, Hiburan, Rumah Tangga, Pakaian & Aksesoris, Belanja Online, Lainnya
 5. Pastikan jumlah * harga_satuan = subtotal untuk setiap item
-6. Return HANYA JSON, tanpa markdown atau penjelasan lain`;
+6. Gunakan info posisi X untuk membedakan kolom: kiri=item, tengah=qty, kanan=harga
+7. Jika ada teks seperti "1 5,000" di posisi tengah+kanan, interpretasikan sebagai qty=1, harga=5000
+8. Return HANYA JSON, tanpa markdown atau penjelasan lain`;
   }
 
   private validasiResponse(response: string): ParsedStrukDto {

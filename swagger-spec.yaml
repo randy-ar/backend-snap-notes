@@ -403,11 +403,16 @@ components:
     ScanStrukDto:
       type: object
       properties:
-        rawText:
+        ocrData:
           type: string
-          description: Teks hasil OCR dari Google ML Kit
+          description: Data OCR dalam format JSON string
+          example: >-
+            {"rawText":"Indomaret
+
+            Jl. Sudirman
+            No.1...","imageSize":{"width":1080,"height":1920},"lines":[{"lineIndex":0,"text":"Indomaret","boundingBox":{"left":120,"top":45,"right":420,"bottom":80}}]}
       required:
-        - rawText
+        - ocrData
     ItemStrukResponseDto:
       type: object
       properties:

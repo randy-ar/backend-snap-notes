@@ -30,6 +30,29 @@ describe('StrukService', () => {
     ],
   };
 
+  const createMockOcrData = () => ({
+    rawText: 'Indomaret\nJl. Sudirman No.1\nNasi Goreng  12000',
+    imageSize: { width: 1080, height: 1920 },
+    linesCount: 3,
+    lines: [
+      {
+        lineIndex: 0,
+        text: 'Indomaret',
+        boundingBox: { left: 120, top: 45, right: 420, bottom: 80 },
+      },
+      {
+        lineIndex: 1,
+        text: 'Jl. Sudirman No.1',
+        boundingBox: { left: 100, top: 90, right: 500, bottom: 125 },
+      },
+      {
+        lineIndex: 2,
+        text: 'Nasi Goreng  12000',
+        boundingBox: { left: 80, top: 200, right: 980, bottom: 235 },
+      },
+    ],
+  });
+
   const createMockPrismaService = () => ({
     struk: {
       findUnique: jest.fn(),
@@ -100,12 +123,13 @@ describe('StrukService', () => {
         originalname: 'test.jpg',
       } as Express.Multer.File;
 
-      const dto = { rawText: 'test ocr text' };
+      const mockOcrData = createMockOcrData();
+      const dto = { ocrData: JSON.stringify(mockOcrData) };
       const storageResult = { path: 'struk/test.jpg', publicUrl: 'http://test.com/test.jpg' };
 
       geminiService.parseStrukOCR.mockResolvedValue(mockParsedData);
       storageService.uploadGambarStruk.mockResolvedValue(storageResult);
-      
+
       const createdStruk = {
         id: mockStrukId,
         penggunaId: mockPenggunaId,
@@ -115,7 +139,7 @@ describe('StrukService', () => {
         total: 85000,
         gambarUrl: 'http://test.com/test.jpg',
         gambarStoragePath: 'struk/test.jpg',
-        rawTextOcr: 'test ocr text',
+        rawTextOcr: dto.ocrData,
         sudahDikonfirmasi: false,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -151,7 +175,11 @@ describe('StrukService', () => {
 
       const result = await service.scanStruk(mockPenggunaId, mockFile, dto);
 
-      expect(geminiService.parseStrukOCR).toHaveBeenCalledWith(dto.rawText);
+      expect(geminiService.parseStrukOCR).toHaveBeenCalledWith(
+        mockOcrData.rawText,
+        mockOcrData.lines,
+        mockOcrData.imageSize
+      );
       expect(storageService.uploadGambarStruk).toHaveBeenCalled();
       expect(result).toBeDefined();
       expect(result.namaToko).toBe('Indomaret');
@@ -162,7 +190,8 @@ describe('StrukService', () => {
         buffer: Buffer.from('test'),
         originalname: 'test.jpg',
       } as Express.Multer.File;
-      const dto = { rawText: 'test' };
+      const mockOcrData = createMockOcrData();
+      const dto = { ocrData: JSON.stringify(mockOcrData) };
 
       geminiService.parseStrukOCR.mockRejectedValue(new ServiceUnavailableException('AI Error'));
 
@@ -174,9 +203,30 @@ describe('StrukService', () => {
         buffer: Buffer.from('test'),
         originalname: 'test.jpg',
       } as Express.Multer.File;
-      const dto = { rawText: 'test' };
+      const mockOcrData = createMockOcrData();
+      const dto = { ocrData: JSON.stringify(mockOcrData) };
 
       geminiService.parseStrukOCR.mockRejectedValue(new UnprocessableEntityException('Invalid JSON'));
+
+      await expect(service.scanStruk(mockPenggunaId, mockFile, dto)).rejects.toThrow(UnprocessableEntityException);
+    });
+
+    it('should throw UnprocessableEntityException when ocrData JSON is invalid', async () => {
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'test.jpg',
+      } as Express.Multer.File;
+      const dto = { ocrData: 'invalid json' };
+
+      await expect(service.scanStruk(mockPenggunaId, mockFile, dto)).rejects.toThrow(UnprocessableEntityException);
+    });
+
+    it('should throw UnprocessableEntityException when ocrData structure is incomplete', async () => {
+      const mockFile = {
+        buffer: Buffer.from('test'),
+        originalname: 'test.jpg',
+      } as Express.Multer.File;
+      const dto = { ocrData: JSON.stringify({ rawText: 'test' }) }; // missing lines
 
       await expect(service.scanStruk(mockPenggunaId, mockFile, dto)).rejects.toThrow(UnprocessableEntityException);
     });

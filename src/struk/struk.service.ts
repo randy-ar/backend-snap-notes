@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException, UnprocessableEntityE
 import { PrismaService } from '../prisma/prisma.service';
 import { GeminiService, ParsedStrukDto } from '../common/gemini/gemini.service';
 import { StorageService } from '../common/storage/storage.service';
-import { ScanStrukDto } from './dto/scan-struk.dto';
+import { ScanStrukDto, OcrDataDto } from './dto/scan-struk.dto';
 import { UpdateStrukDto } from './dto/update-struk.dto';
 import { StrukResponseDto, ItemStrukResponseDto } from './dto/struk-response.dto';
 
@@ -17,10 +17,27 @@ export class StrukService {
   async scanStruk(penggunaId: string, file: Express.Multer.File | undefined, dto: ScanStrukDto): Promise<StrukResponseDto> {
     const startTime = Date.now();
 
+    // Parse ocrData dari string JSON
+    let ocrData: OcrDataDto;
+    try {
+      ocrData = JSON.parse(dto.ocrData) as OcrDataDto;
+    } catch {
+      throw new UnprocessableEntityException('Format ocrData JSON tidak valid');
+    }
+
+    // Validasi struktur dasar
+    if (!ocrData.rawText || !Array.isArray(ocrData.lines)) {
+      throw new UnprocessableEntityException('Struktur ocrData tidak lengkap (rawText dan lines wajib ada)');
+    }
+
     let parsedData: ParsedStrukDto;
 
     try {
-      parsedData = await this.geminiService.parseStrukOCR(dto.rawText);
+      parsedData = await this.geminiService.parseStrukOCR(
+        ocrData.rawText,
+        ocrData.lines,
+        ocrData.imageSize
+      );
     } catch (error) {
       if (error instanceof ServiceUnavailableException || error instanceof UnprocessableEntityException) {
         throw error;
@@ -61,7 +78,7 @@ export class StrukService {
           total: parsedData.total,
           gambarUrl: storageResult?.publicUrl || null,
           gambarStoragePath: storageResult?.path || null,
-          rawTextOcr: dto.rawText,
+          rawTextOcr: dto.ocrData,
           sudahDikonfirmasi: false,
         },
         include: {
