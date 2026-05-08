@@ -108,6 +108,8 @@ Analisis posisi:
 - lineIndex menunjukkan urutan baris dari atas ke bawah`;
     }
 
+    const currentDate = new Date().toISOString().split('T')[0];
+    
     return `Anda adalah parser struk belanja. Analisis teks OCR berikut dan ekstrak informasi struk ke format JSON.
 
 TEKS OCR:
@@ -132,21 +134,31 @@ Ekstrak informasi berikut dalam format JSON:
   ]
 }
 
-Aturan:
-1. Tanggal harus dalam format YYYY-MM-DD (konversi dari format Indonesia DD-MM-YYYY atau DD/MM/YYYY)
-2. Total adalah angka total keseluruhan struk (bukan subtotal item)
-3. Harga dalam format number tanpa pemisah ribuan (contoh: 10500 bukan 10.500)
-4. Kategori bisa: Makanan & Minuman, Transportasi, Kesehatan, Pendidikan, Hiburan, Rumah Tangga, Pakaian & Aksesoris, Belanja Online, Lainnya
-5. Pastikan jumlah * harga_satuan = subtotal untuk setiap item
-6. Gunakan info posisi X untuk membedakan kolom: kiri=item, tengah=qty, kanan=harga
-7. Jika ada teks seperti "1 5,000" di posisi tengah+kanan, interpretasikan sebagai qty=1, harga=5000
-8. Return HANYA JSON, tanpa markdown atau penjelasan lain`;
+Aturan WAJIB:
+1. SELALY kembalikan semua field yang dibutuhkan, jangan biarkan kosong
+2. Jika nama_toko tidak ditemukan, gunakan "Tidak diketahui"
+3. Jika tanggal tidak ditemukan dalam teks, gunakan tanggal hari ini: ${currentDate}
+4. Jika total tidak ditemukan, jumlahkan semua subtotal dari item untuk mendapatkan total
+5. Jika tidak ada item produk sama sekali yang bisa diidentifikasi, return JSON dengan error message di field "error": "Gambar struk tidak jelas, mohon upload ulang"
+6. Tanggal harus dalam format YYYY-MM-DD (konversi dari format Indonesia DD-MM-YYYY atau DD/MM/YYYY)
+7. Total adalah angka total keseluruhan struk (bukan subtotal item)
+8. Harga dalam format number tanpa pemisah ribuan (contoh: 10500 bukan 10.500)
+9. Kategori bisa: Makanan & Minuman, Transportasi, Kesehatan, Pendidikan, Hiburan, Rumah Tangga, Pakaian & Aksesoris, Belanja Online, Lainnya
+10. Pastikan jumlah * harga_satuan = subtotal untuk setiap item
+11. Gunakan info posisi X untuk membedakan kolom: kiri=item, tengah=qty, kanan=harga
+12. Jika ada teks seperti "1 5,000" di posisi tengah+kanan, interpretasikan sebagai qty=1, harga=5000
+13. Return HANYA JSON, tanpa markdown atau penjelasan lain`;
   }
 
   private validasiResponse(response: string): ParsedStrukDto {
     try {
       const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const parsed = JSON.parse(cleaned) as ParsedStrukDto;
+      const parsed = JSON.parse(cleaned) as ParsedStrukDto & { error?: string };
+
+      // Cek jika AI mengembalikan error message
+      if (parsed.error) {
+        throw new UnprocessableEntityException(parsed.error);
+      }
 
       if (!parsed.nama_toko || !parsed.tanggal || typeof parsed.total !== 'number') {
         throw new UnprocessableEntityException('Format JSON dari AI tidak lengkap');
