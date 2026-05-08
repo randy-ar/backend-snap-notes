@@ -45,6 +45,27 @@ paths:
           description: Email atau password salah
       summary: Masuk dengan email dan password
       tags: *ref_0
+  /auth/google:
+    post:
+      operationId: AuthController_googleSignIn
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GoogleLoginDto'
+      responses:
+        '200':
+          description: Berhasil masuk dengan Google
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
+        '401':
+          description: Google ID token tidak valid
+      summary: Masuk dengan Google OAuth
+      tags: *ref_0
   /auth/keluar:
     post:
       operationId: AuthController_keluar
@@ -354,6 +375,14 @@ components:
       required:
         - email
         - password
+    GoogleLoginDto:
+      type: object
+      properties:
+        idToken:
+          type: string
+          description: Google ID token dari Flutter
+      required:
+        - idToken
     RefreshDto:
       type: object
       properties:

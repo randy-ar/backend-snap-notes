@@ -6,6 +6,7 @@ import { DaftarDto } from './dto/daftar.dto';
 import { MasukDto } from './dto/masuk.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { UpdateProfilDto } from './dto/update-profil.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { ProfilResponseDto } from './dto/profil-response.dto';
 
@@ -36,6 +37,14 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Email atau password salah' })
   async masuk(@Body() dto: MasukDto): Promise<AuthResponseDto> {
     return this.authService.masuk(dto);
+  }
+
+  @Post('google')
+  @ApiOperation({ summary: 'Masuk dengan Google OAuth' })
+  @ApiResponse({ status: 200, description: 'Berhasil masuk dengan Google', type: AuthResponseDto })
+  @ApiResponse({ status: 401, description: 'Google ID token tidak valid' })
+  async googleSignIn(@Body() dto: GoogleLoginDto): Promise<AuthResponseDto> {
+    return this.authService.googleSignIn(dto);
   }
 
   @Post('keluar')

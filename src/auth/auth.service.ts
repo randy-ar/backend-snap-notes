@@ -5,6 +5,7 @@ import { DaftarDto } from './dto/daftar.dto';
 import { MasukDto } from './dto/masuk.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { UpdateProfilDto } from './dto/update-profil.dto';
+import { GoogleLoginDto } from './dto/google-login.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { ProfilResponseDto } from './dto/profil-response.dto';
 
@@ -150,6 +151,50 @@ export class AuthService {
       fotoProfilUrl: pengguna.fotoProfilUrl || undefined,
       createdAt: pengguna.createdAt,
       updatedAt: pengguna.updatedAt,
+    };
+  }
+
+  async googleSignIn(dto: GoogleLoginDto): Promise<AuthResponseDto> {
+    const client = this.supabaseService.getClient();
+
+    const { data: authData, error: authError } = await client.auth.signInWithIdToken({
+      provider: 'google',
+      token: dto.idToken,
+    });
+
+    if (authError || !authData.user || !authData.session) {
+      throw new UnauthorizedException('Google ID token tidak valid atau gagal membuat sesi');
+    }
+
+    if (!authData.user.email) {
+      throw new UnauthorizedException('Email tidak tersedia dari Google account');
+    }
+
+    let pengguna = await this.prisma.pengguna.findUnique({
+      where: { id: authData.user.id },
+    });
+
+    if (!pengguna) {
+      const namaLengkap =
+        authData.user.user_metadata?.full_name ||
+        authData.user.user_metadata?.name ||
+        authData.user.email.split('@')[0] ||
+        'Pengguna';
+
+      pengguna = await this.prisma.pengguna.create({
+        data: {
+          id: authData.user.id,
+          email: authData.user.email,
+          namaLengkap: namaLengkap,
+        },
+      });
+    }
+
+    return {
+      accessToken: authData.session.access_token,
+      refreshToken: authData.session.refresh_token,
+      userId: pengguna.id,
+      email: pengguna.email,
     };
   }
 }
