@@ -62,7 +62,8 @@ export class StrukService {
       try {
         storageResult = await this.storageService.uploadGambarStruk(file.buffer, file.originalname);
       } catch (error) {
-        throw new ServiceUnavailableException('Gagal mengupload gambar struk');
+        console.error('Error uploading image to Supabase:', error);
+        throw new ServiceUnavailableException(`Gagal mengupload gambar struk: ${error.message}`);
       }
     }
 
@@ -97,7 +98,8 @@ export class StrukService {
         },
       });
 
-      const itemPromises = parsedData.item.map(async (item) => {
+      const items = [];
+      for (const item of parsedData.item) {
         let itemKategoriId: string | null = null;
         if (item.kategori) {
           const itemKategori = await tx.kategori.findFirst({
@@ -111,7 +113,7 @@ export class StrukService {
           itemKategoriId = itemKategori?.id || null;
         }
 
-        return tx.itemStruk.create({
+        const createdItem = await tx.itemStruk.create({
           data: {
             strukId: createdStruk.id,
             kategoriId: itemKategoriId,
@@ -124,9 +126,9 @@ export class StrukService {
             kategori: true,
           },
         });
-      });
-
-      const items = await Promise.all(itemPromises);
+        
+        items.push(createdItem);
+      }
 
       await tx.pengeluaran.create({
         data: {

@@ -315,6 +315,302 @@ paths:
         - bearer: []
       summary: Konfirmasi struk sudah ditinjau
       tags: *ref_1
+  /pengeluaran:
+    post:
+      operationId: PengeluaranController_tambah
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePengeluaranDto'
+      responses:
+        '201':
+          description: Pengeluaran berhasil ditambahkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PengeluaranResponseDto'
+        '400':
+          description: Data tidak valid
+        '401':
+          description: Unauthorized
+      security:
+        - bearer: []
+      summary: Tambah data pengeluaran secara manual
+      tags: &ref_2
+        - pengeluaran
+    get:
+      operationId: PengeluaranController_getDaftar
+      parameters:
+        - name: bulan
+          required: false
+          in: query
+          description: Bulan (1-12)
+          schema:
+            example: 5
+            type: number
+        - name: tahun
+          required: false
+          in: query
+          description: Tahun
+          schema:
+            example: 2026
+            type: number
+      responses:
+        '200':
+          description: Daftar pengeluaran berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PengeluaranResponseDto'
+        '401':
+          description: Unauthorized
+      security:
+        - bearer: []
+      summary: Mendapatkan daftar pengeluaran (bisa difilter bulan/tahun)
+      tags: *ref_2
+  /pengeluaran/{id}:
+    get:
+      operationId: PengeluaranController_getDetail
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detail pengeluaran berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PengeluaranResponseDto'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Pengeluaran tidak ditemukan
+      security:
+        - bearer: []
+      summary: Mendapatkan detail pengeluaran
+      tags: *ref_2
+    patch:
+      operationId: PengeluaranController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePengeluaranDto'
+      responses:
+        '200':
+          description: Pengeluaran berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PengeluaranResponseDto'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Pengeluaran tidak ditemukan
+      security:
+        - bearer: []
+      summary: Memperbarui data pengeluaran
+      tags: *ref_2
+    delete:
+      operationId: PengeluaranController_hapus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Pengeluaran berhasil dihapus
+        '401':
+          description: Unauthorized
+        '404':
+          description: Pengeluaran tidak ditemukan
+      security:
+        - bearer: []
+      summary: Menghapus data pengeluaran
+      tags: *ref_2
+  /pemasukan:
+    post:
+      operationId: PemasukanController_tambah
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePemasukanDto'
+      responses:
+        '201':
+          description: Pemasukan berhasil ditambahkan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PemasukanResponseDto'
+        '400':
+          description: Data tidak valid
+        '401':
+          description: Unauthorized
+      security:
+        - bearer: []
+      summary: Tambah data pemasukan secara manual
+      tags: &ref_3
+        - pemasukan
+    get:
+      operationId: PemasukanController_getDaftar
+      parameters:
+        - name: bulan
+          required: false
+          in: query
+          description: Bulan (1-12)
+          schema:
+            example: 5
+            type: number
+        - name: tahun
+          required: false
+          in: query
+          description: Tahun
+          schema:
+            example: 2026
+            type: number
+      responses:
+        '200':
+          description: Daftar pemasukan berhasil diambil
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PemasukanResponseDto'
+        '401':
+          description: Unauthorized
+      security:
+        - bearer: []
+      summary: Mendapatkan daftar pemasukan (bisa difilter bulan/tahun)
+      tags: *ref_3
+  /pemasukan/{id}:
+    get:
+      operationId: PemasukanController_getDetail
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Detail pemasukan berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PemasukanResponseDto'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Pemasukan tidak ditemukan
+      security:
+        - bearer: []
+      summary: Mendapatkan detail pemasukan
+      tags: *ref_3
+    patch:
+      operationId: PemasukanController_update
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePemasukanDto'
+      responses:
+        '200':
+          description: Pemasukan berhasil diperbarui
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PemasukanResponseDto'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Pemasukan tidak ditemukan
+      security:
+        - bearer: []
+      summary: Memperbarui data pemasukan
+      tags: *ref_3
+    delete:
+      operationId: PemasukanController_hapus
+      parameters:
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Pemasukan berhasil dihapus
+        '401':
+          description: Unauthorized
+        '404':
+          description: Pemasukan tidak ditemukan
+      security:
+        - bearer: []
+      summary: Menghapus data pemasukan
+      tags: *ref_3
+  /dashboard/ringkasan:
+    get:
+      operationId: DashboardController_getRingkasan
+      parameters:
+        - name: bulan
+          required: false
+          in: query
+          description: >-
+            Filter berdasarkan bulan (1-12). Jika tidak diisi, menggunakan bulan
+            berjalan.
+          schema:
+            example: '5'
+            type: string
+        - name: tahun
+          required: false
+          in: query
+          description: >-
+            Filter berdasarkan tahun (contoh: 2026). Jika tidak diisi,
+            menggunakan tahun berjalan.
+          schema:
+            example: '2026'
+            type: string
+      responses:
+        '200':
+          description: Ringkasan berhasil diambil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RingkasanResponseDto'
+        '401':
+          description: Unauthorized
+      security:
+        - bearer: []
+      summary: Mendapatkan ringkasan dashboard (total pemasukan, pengeluaran, saldo)
+      tags:
+        - dashboard
 info:
   title: Snap Notes API
   description: API untuk aplikasi pencatat pengeluaran dari struk belanja
@@ -543,3 +839,205 @@ components:
         total:
           type: number
           description: Total keseluruhan struk
+    CreatePengeluaranDto:
+      type: object
+      properties:
+        deskripsi:
+          type: string
+          description: Deskripsi pengeluaran
+          example: Makan siang
+        jumlah:
+          type: number
+          description: Jumlah pengeluaran
+          example: 25000
+        tanggal:
+          type: string
+          description: Tanggal pengeluaran (ISO 8601)
+          example: '2026-05-28T00:00:00.000Z'
+        kategoriId:
+          type: string
+          description: ID kategori
+        catatan:
+          type: string
+          description: Catatan tambahan
+      required:
+        - deskripsi
+        - jumlah
+        - tanggal
+    PengeluaranResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID pengeluaran
+        penggunaId:
+          type: string
+          description: ID pengguna
+        strukId:
+          type: string
+          description: ID struk terkait (jika ada)
+        kategoriId:
+          type: string
+          description: ID kategori
+        kategoriNama:
+          type: string
+          description: Nama kategori
+        deskripsi:
+          type: string
+          description: Deskripsi pengeluaran
+        jumlah:
+          type: number
+          description: Jumlah pengeluaran
+        tanggal:
+          format: date-time
+          type: string
+          description: Tanggal pengeluaran
+        catatan:
+          type: string
+          description: Catatan tambahan
+        createdAt:
+          format: date-time
+          type: string
+          description: Tanggal dibuat
+        updatedAt:
+          format: date-time
+          type: string
+          description: Tanggal diupdate
+        struk:
+          type: object
+          description: Detail struk terkait (hanya direturn pada detail)
+      required:
+        - id
+        - penggunaId
+        - deskripsi
+        - jumlah
+        - tanggal
+        - createdAt
+        - updatedAt
+    UpdatePengeluaranDto:
+      type: object
+      properties:
+        deskripsi:
+          type: string
+          description: Deskripsi pengeluaran
+          example: Makan siang
+        jumlah:
+          type: number
+          description: Jumlah pengeluaran
+          example: 25000
+        tanggal:
+          type: string
+          description: Tanggal pengeluaran (ISO 8601)
+          example: '2026-05-28T00:00:00.000Z'
+        kategoriId:
+          type: string
+          description: ID kategori
+        catatan:
+          type: string
+          description: Catatan tambahan
+    CreatePemasukanDto:
+      type: object
+      properties:
+        deskripsi:
+          type: string
+          description: Deskripsi pemasukan
+          example: Makan siang
+        jumlah:
+          type: number
+          description: Jumlah pemasukan
+          example: 25000
+        tanggal:
+          type: string
+          description: Tanggal pemasukan (ISO 8601)
+          example: '2026-05-28T00:00:00.000Z'
+        kategoriId:
+          type: string
+          description: ID kategori
+        catatan:
+          type: string
+          description: Catatan tambahan
+      required:
+        - deskripsi
+        - jumlah
+        - tanggal
+    PemasukanResponseDto:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID pemasukan
+        penggunaId:
+          type: string
+          description: ID pengguna
+        kategoriId:
+          type: string
+          description: ID kategori
+        kategoriNama:
+          type: string
+          description: Nama kategori
+        deskripsi:
+          type: string
+          description: Deskripsi pemasukan
+        jumlah:
+          type: number
+          description: Jumlah pemasukan
+        tanggal:
+          format: date-time
+          type: string
+          description: Tanggal pemasukan
+        catatan:
+          type: string
+          description: Catatan tambahan
+        createdAt:
+          format: date-time
+          type: string
+          description: Tanggal dibuat
+        updatedAt:
+          format: date-time
+          type: string
+          description: Tanggal diupdate
+      required:
+        - id
+        - penggunaId
+        - deskripsi
+        - jumlah
+        - tanggal
+        - createdAt
+        - updatedAt
+    UpdatePemasukanDto:
+      type: object
+      properties:
+        deskripsi:
+          type: string
+          description: Deskripsi pemasukan
+          example: Makan siang
+        jumlah:
+          type: number
+          description: Jumlah pemasukan
+          example: 25000
+        tanggal:
+          type: string
+          description: Tanggal pemasukan (ISO 8601)
+          example: '2026-05-28T00:00:00.000Z'
+        kategoriId:
+          type: string
+          description: ID kategori
+        catatan:
+          type: string
+          description: Catatan tambahan
+    RingkasanResponseDto:
+      type: object
+      properties:
+        totalPemasukan:
+          type: number
+          description: Total pemasukan pada periode yang diminta
+        totalPengeluaran:
+          type: number
+          description: Total pengeluaran pada periode yang diminta
+        saldo:
+          type: number
+          description: Selisih total pemasukan dan total pengeluaran (bisa negatif)
+      required:
+        - totalPemasukan
+        - totalPengeluaran
+        - saldo

@@ -6,6 +6,9 @@ import { StorageModule } from './common/storage/storage.module';
 import { GeminiModule } from './common/gemini/gemini.module';
 import { AuthModule } from './auth/auth.module';
 import { StrukModule } from './struk/struk.module';
+import { PengeluaranModule } from './pengeluaran/pengeluaran.module';
+import { PemasukanModule } from './pemasukan/pemasukan.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -19,6 +22,9 @@ import { StrukModule } from './struk/struk.module';
     GeminiModule,
     AuthModule,
     StrukModule,
+    PengeluaranModule,
+    PemasukanModule,
+    DashboardModule,
   ],
   controllers: [],
   providers: [],

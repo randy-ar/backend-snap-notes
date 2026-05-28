@@ -9,6 +9,6 @@ import { AuthService } from './auth.service';
   imports: [SupabaseModule, PrismaModule],
   controllers: [AuthController],
   providers: [AuthService, SupabaseAuthGuard],
-  exports: [AuthService, SupabaseAuthGuard],
+  exports: [AuthService, SupabaseAuthGuard, SupabaseModule],
 })
 export class AuthModule {}
