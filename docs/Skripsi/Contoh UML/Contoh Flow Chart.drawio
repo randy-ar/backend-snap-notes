@@ -1,0 +1,67 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Page-1" id="w4vuWa-ZvMemdivJ5MYK">
+    <mxGraphModel dx="1152" dy="736" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="7gljLG2y42U-u8lkG4-C-1" parent="1" style="swimlane;whiteSpace=wrap;html=1;" value="&amp;nbsp;Alur Proses Ubah Data OCR Menggunakan Gemini API" vertex="1">
+          <mxGeometry height="430" width="410" x="80" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-4" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-2" parent="7gljLG2y42U-u8lkG4-C-1" style="ellipse;fillColor=strokeColor;html=1;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="95" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-6" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-5" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-3" parent="7gljLG2y42U-u8lkG4-C-1" style="rounded=1;whiteSpace=wrap;html=1;" value="Aplikasi mengirimkan gambar dan teks hasil OCR ke server" vertex="1">
+          <mxGeometry height="60" width="160" x="30" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-8" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-7" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-5" parent="7gljLG2y42U-u8lkG4-C-1" style="rounded=1;whiteSpace=wrap;html=1;" value="Server menerima gambar dan teks hasil OCR" vertex="1">
+          <mxGeometry height="60" width="160" x="30" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-11" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-7" parent="7gljLG2y42U-u8lkG4-C-1" style="rounded=1;whiteSpace=wrap;html=1;" value="Server mengirimkan teks hasil OCR dan instruksi ke Gemini AI" vertex="1">
+          <mxGeometry height="60" width="160" x="30" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-10" parent="7gljLG2y42U-u8lkG4-C-1" style="ellipse;" value="1" vertex="1">
+          <mxGeometry height="30" width="30" x="95" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-14" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-12" parent="7gljLG2y42U-u8lkG4-C-1" style="ellipse;" value="1" vertex="1">
+          <mxGeometry height="30" width="30" x="287.5" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-16" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-13" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-15" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-13" parent="7gljLG2y42U-u8lkG4-C-1" style="rounded=1;whiteSpace=wrap;html=1;" value="Gemini AI memproses instruksi untuk mengubah teks menjadi data terstruktur" vertex="1">
+          <mxGeometry height="60" width="165" x="220" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-20" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-15" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-19" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-15" parent="7gljLG2y42U-u8lkG4-C-1" style="rounded=1;whiteSpace=wrap;html=1;" value="Gemini AI mengembalikan data dengan format JSON ke server" vertex="1">
+          <mxGeometry height="60" width="165" x="220" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-23" edge="1" parent="7gljLG2y42U-u8lkG4-C-1" source="7gljLG2y42U-u8lkG4-C-19" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="7gljLG2y42U-u8lkG4-C-21">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-19" parent="7gljLG2y42U-u8lkG4-C-1" style="rounded=1;whiteSpace=wrap;html=1;" value="Server menerima data JSON dan menyimpannya ke basis data" vertex="1">
+          <mxGeometry height="60" width="165" x="220" y="280" as="geometry" />
+        </mxCell>
+        <mxCell id="7gljLG2y42U-u8lkG4-C-21" parent="7gljLG2y42U-u8lkG4-C-1" style="ellipse;html=1;shape=endState;fillColor=strokeColor;" value="" vertex="1">
+          <mxGeometry height="30" width="30" x="287.5" y="370" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

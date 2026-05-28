@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, UnprocessableEntityException, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { GeminiService, ParsedStrukDto } from '../common/gemini/gemini.service';
+import { LLMFactory } from '../common/llm/llm.factory';
+import { ParsedStrukDto } from '../common/llm/llm-provider.interface';
 import { StorageService } from '../common/storage/storage.service';
 import { ScanStrukDto, OcrDataDto } from './dto/scan-struk.dto';
 import { UpdateStrukDto } from './dto/update-struk.dto';
@@ -10,12 +11,21 @@ import { StrukResponseDto, ItemStrukResponseDto } from './dto/struk-response.dto
 export class StrukService {
   constructor(
     private prisma: PrismaService,
-    private geminiService: GeminiService,
+    private llmFactory: LLMFactory,
     private storageService: StorageService,
   ) {}
 
   async scanStruk(penggunaId: string, file: Express.Multer.File | undefined, dto: ScanStrukDto): Promise<StrukResponseDto> {
     const startTime = Date.now();
+
+    // Pastikan pengguna ada di database (fallback untuk auth via Google/external)
+    const pengguna = await this.prisma.pengguna.findUnique({
+      where: { id: penggunaId },
+    });
+
+    if (!pengguna) {
+      throw new NotFoundException('Data pengguna tidak ditemukan. Silakan login ulang.');
+    }
 
     // Parse ocrData dari string JSON
     let ocrData: OcrDataDto;
@@ -31,9 +41,10 @@ export class StrukService {
     }
 
     let parsedData: ParsedStrukDto;
+    const llmProvider = this.llmFactory.getProvider();
 
     try {
-      parsedData = await this.geminiService.parseStrukOCR(
+      parsedData = await llmProvider.parseStrukOCR(
         ocrData.rawText,
         ocrData.lines,
         ocrData.imageSize

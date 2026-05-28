@@ -1,11 +1,12 @@
 import { Controller, Post, Get, Patch, Delete, Body, Param, Query, UseGuards, UseInterceptors, UploadedFile, Req } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiConsumes, ApiBody, ApiQuery } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard';
 import { StrukService } from './struk.service';
 import { ScanStrukDto } from './dto/scan-struk.dto';
 import { UpdateStrukDto } from './dto/update-struk.dto';
 import { StrukResponseDto } from './dto/struk-response.dto';
+import { QueryStrukDto } from './dto/query-struk.dto';
 
 interface RequestWithUser extends Request {
   user: {
@@ -49,12 +50,11 @@ export class StrukController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getDaftarStruk(
     @Req() req: RequestWithUser,
-    @Query('bulan') bulan?: string,
-    @Query('tahun') tahun?: string,
+    @Query() queryDto: QueryStrukDto,
   ): Promise<StrukResponseDto[]> {
     const query = {
-      bulan: bulan ? parseInt(bulan, 10) : undefined,
-      tahun: tahun ? parseInt(tahun, 10) : undefined,
+      bulan: queryDto.bulan ? parseInt(queryDto.bulan, 10) : undefined,
+      tahun: queryDto.tahun ? parseInt(queryDto.tahun, 10) : undefined,
     };
     return this.strukService.getDaftarStruk(req.user.id, query);
   }

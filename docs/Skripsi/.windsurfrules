@@ -1,0 +1,40 @@
+# Windsurf Rules untuk Skripsi
+
+## Context
+Mahasiswa Teknik Informatika semester 8 sedang menulis skripsi dengan judul:
+"PEMBANGUNAN APLIKASI PENCATATAN KEUANGAN PRIBADI DENGAN MEMANFAATKAN TEKNOLOGI OCR DAN LLM UNTUK EKSTRAKSI DATA STRUK BELANJA"
+
+## Problem Statements
+1. Masyarakat sering lupa mencatat struk belanja ke pembukuan
+2. Masyarakat malas mencatat data dari struk belanja karena dirasa kurang efisien
+3. Masyarakat kurang mendapatkan informasi/overview yang jelas terkait laporan pengeluaran bulanan
+
+## Tech Stack
+- OCR: Google ML Kit Text Recognition
+- AI Parsing: Google Gemini AI API
+- Mobile Client: Flutter
+- Backend: NestJS
+- Database: Supabase (PostgreSQL)
+- Storage: Supabase Storage
+
+## Writing Style
+- Formal dan objektif (bahasa Indonesia akademik)
+- Sistematis dengan logika jelas
+- Teknis namun dimengerti
+- Gunakan kalimat pasif untuk konteks teknis
+- Hindari bahasa gaul atau kontraksi
+
+## Output Format
+- Heading dengan markdown (#, ##, ###)
+- Bullet/numbered list untuk merangkum poin
+- Code block dengan syntax highlighting
+- Markdown table untuk perbandingan data
+- Referensi ke file .drawio untuk diagram
+
+## Task
+Dokumentasikan aplikasi Snap Notes ke dalam karya ilmiah skripsi yang mencakup:
+- BAB 1: Pendahuluan
+- BAB 2: Tinjauan Pustaka
+- BAB 3: Analisis dan Perancangan
+- BAB 4: Implementasi dan Pengujian
+- BAB 5: Kesimpulan dan Saran

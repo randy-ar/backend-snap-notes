@@ -1,88 +1,17 @@
 import { Injectable, UnprocessableEntityException, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenAI } from '@google/genai';
+import {
+  ILLMProvider,
+  ParsedStrukDto,
+  OcrLine,
+  ImageSize,
+} from './llm-provider.interface';
 
-export interface ParsedItemDto {
-  nama: string;
-  jumlah: number;
-  harga_satuan: number;
-  subtotal: number;
-  kategori?: string;
-}
-
-export interface ParsedStrukDto {
-  nama_toko: string;
-  tanggal: string;
-  total: number;
-  kategori_toko?: string;
-  item: ParsedItemDto[];
-}
-
-interface OcrLine {
-  lineIndex: number;
-  text: string;
-  boundingBox: {
-    left: number;
-    top: number;
-    right: number;
-    bottom: number;
-  };
-}
-
-interface ImageSize {
-  width: number;
-  height: number;
-}
-
-const STRUK_JSON_SCHEMA = {
-  type: 'object',
-  properties: {
-    nama_toko: {
-      type: 'string',
-      description: 'Nama toko atau merchant pada struk.',
-    },
-    tanggal: {
-      type: 'string',
-      description: 'Tanggal transaksi dalam format YYYY-MM-DD.',
-    },
-    total: {
-      type: 'number',
-      description: 'Total keseluruhan struk (angka tanpa pemisah ribuan).',
-    },
-    kategori_toko: {
-      type: 'string',
-      description:
-        'Kategori toko (opsional): Makanan & Minuman, Transportasi, Kesehatan, Pendidikan, Hiburan, Rumah Tangga, Pakaian & Aksesoris, Belanja Online, Lainnya.',
-    },
-    error: {
-      type: 'string',
-      description:
-        'Isi field ini jika gambar tidak jelas dan item tidak dapat diidentifikasi. Kosongkan jika berhasil.',
-    },
-    item: {
-      type: 'array',
-      description: 'Daftar item pada struk.',
-      items: {
-        type: 'object',
-        properties: {
-          nama: { type: 'string', description: 'Nama item/produk.' },
-          jumlah: { type: 'integer', description: 'Jumlah/qty item.' },
-          harga_satuan: { type: 'number', description: 'Harga per satuan item.' },
-          subtotal: { type: 'number', description: 'jumlah * harga_satuan.' },
-          kategori: {
-            type: 'string',
-            description: 'Kategori item (opsional).',
-          },
-        },
-        required: ['nama', 'jumlah', 'harga_satuan', 'subtotal'],
-      },
-    },
-  },
-  required: ['nama_toko', 'tanggal', 'total', 'item'],
-};
+export type { ParsedItemDto, ParsedStrukDto } from './llm-provider.interface';
 
 @Injectable()
-export class GeminiService {
+export class GeminiService implements ILLMProvider {
   private genAI: GoogleGenAI;
   private model: string;
 
@@ -92,7 +21,7 @@ export class GeminiService {
       throw new Error('GEMINI_API_KEY harus diatur di environment variables');
     }
     this.genAI = new GoogleGenAI({ apiKey });
-    this.model = 'gemini-2.5-flash';
+    this.model = this.configService.get<string>('GEMINI_MODEL') || 'gemini-2.5-flash';
   }
 
   async parseStrukOCR(rawText: string, lines?: OcrLine[], imageSize?: ImageSize): Promise<ParsedStrukDto> {
@@ -102,10 +31,6 @@ export class GeminiService {
       const geminiPromise = this.genAI.models.generateContent({
         model: this.model,
         contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: STRUK_JSON_SCHEMA,
-        },
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -160,12 +85,33 @@ Analisis posisi:
     }
 
     const currentDate = new Date().toISOString().split('T')[0];
-    
+
     return `Anda adalah parser struk belanja. Analisis teks OCR berikut dan ekstrak informasi struk ke format JSON.
+
 TEKS OCR:
-${layoutInfo}
+"""
+${rawText}
+"""${layoutInfo}
+
+Ekstrak informasi berikut dalam format JSON:
+{
+  "nama_toko": "Nama toko/merchant",
+  "tanggal": "YYYY-MM-DD",
+  "total": 0,
+  "kategori_toko": "Kategori toko (opsional)",
+  "item": [
+    {
+      "nama": "Nama item",
+      "jumlah": 1,
+      "harga_satuan": 0,
+      "subtotal": 0,
+      "kategori": "Kategori item (opsional)"
+    }
+  ]
+}
+
 Aturan WAJIB:
-1. SELALU kembalikan semua field yang dibutuhkan, jangan biarkan kosong
+1. SELALY kembalikan semua field yang dibutuhkan, jangan biarkan kosong
 2. Jika nama_toko tidak ditemukan, gunakan "Tidak diketahui"
 3. Jika tanggal tidak ditemukan dalam teks, gunakan tanggal hari ini: ${currentDate}
 4. Jika total tidak ditemukan, jumlahkan semua subtotal dari item untuk mendapatkan total
@@ -177,14 +123,14 @@ Aturan WAJIB:
 10. Pastikan jumlah * harga_satuan = subtotal untuk setiap item
 11. Gunakan info posisi X untuk membedakan kolom: kiri=item, tengah=qty, kanan=harga
 12. Jika ada teks seperti "1 5,000" di posisi tengah+kanan, interpretasikan sebagai qty=1, harga=5000
-13. Gunakan info posisi X dan Y untuk memastikan pengelompokan item yang benar`;
+13. Return HANYA JSON, tanpa markdown atau penjelasan lain`;
   }
 
   private validasiResponse(response: string): ParsedStrukDto {
     try {
-      const parsed = JSON.parse(response) as ParsedStrukDto & { error?: string };
+      const cleaned = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const parsed = JSON.parse(cleaned) as ParsedStrukDto & { error?: string };
 
-      // Cek jika AI mengembalikan error message
       if (parsed.error) {
         throw new UnprocessableEntityException(parsed.error);
       }

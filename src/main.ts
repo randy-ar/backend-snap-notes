@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { Request, Response, NextFunction } from 'express';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -11,6 +12,14 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   app.setGlobalPrefix('api');
+
+  // Increase timeout for long-running requests (AI processing, file uploads)
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.setTimeout(60000, () => {
+      console.error(`Request timeout: ${req.method} ${req.url}`);
+    });
+    next();
+  });
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     transform: true,
@@ -32,8 +41,8 @@ async function bootstrap() {
   }
 
   const port = configService.get<number>('PORT') || 3000;
-  await app.listen(port);
-  console.log(`Application running on port ${port}`);
+  await app.listen(port, '0.0.0.0');
+  console.log(`Application running on port ${port} (0.0.0.0)`);
   if (swaggerEnabled) {
     console.log(`Swagger docs available at http://localhost:${port}/api/docs`);
   }

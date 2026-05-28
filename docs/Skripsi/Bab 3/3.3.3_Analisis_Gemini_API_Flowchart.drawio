@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-05-08T11:08:00.000Z" agent="5.0" etag="gemini-api-flowchart" version="21.6.5" type="device">
+  <diagram name="Page-1" id="gemini-api-flowchart">
+    <mxGraphModel dx="1152" dy="736" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- Swimlane Container -->
+        <mxCell id="2" value="&nbsp;Alur Proses Analisis Struk dengan Gemini API" style="swimlane;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry height="600" width="450" x="80" y="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Start Node -->
+        <mxCell id="3" value="" style="ellipse;fillColor=strokeColor;html=1;" vertex="1" parent="2">
+          <mxGeometry height="30" width="30" x="95" y="40" as="geometry" />
+        </mxCell>
+        
+        <!-- Process 1: Input Data -->
+        <mxCell id="4" value="Data teks OCR dengan&#xa;koordinat spasial diterima" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry height="60" width="160" x="30" y="100" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrow 1 -->
+        <mxCell id="5" edge="1" parent="2" source="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Process 2: Prompt Engineering -->
+        <mxCell id="6" value="Server Snap Notes membuat&#xa;prompt dengan konteks spasial" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry height="60" width="160" x="30" y="180" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrow 2 -->
+        <mxCell id="7" edge="1" parent="2" source="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Process 3: Send to Gemini API -->
+        <mxCell id="8" value="Server mengirim request&#xa;ke Gemini API" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry height="60" width="160" x="30" y="260" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrow 3 -->
+        <mxCell id="9" edge="1" parent="2" source="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Process 4: Gemini API Processing -->
+        <mxCell id="10" value="Gemini API menganalisis&#xa;dengan model AI" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry height="60" width="160" x="30" y="340" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrow 4 -->
+        <mxCell id="11" edge="1" parent="2" source="8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="10">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Process 5: Response from Gemini -->
+        <mxCell id="12" value="Server menerima response&#xa;JSON dari Gemini API" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry height="60" width="160" x="30" y="420" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrow 5 -->
+        <mxCell id="13" edge="1" parent="2" source="10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="12">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Process 6: Validation -->
+        <mxCell id="14" value="Server memvalidasi&#xa;struktur data JSON" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="2">
+          <mxGeometry height="60" width="160" x="30" y="500" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrow 6 -->
+        <mxCell id="15" edge="1" parent="2" source="12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- End Node -->
+        <mxCell id="16" value="" style="ellipse;fillColor=strokeColor;html=1;" vertex="1" parent="2">
+          <mxGeometry height="30" width="30" x="95" y="580" as="geometry" />
+        </mxCell>
+        
+        <!-- Arrow 7 -->
+        <mxCell id="17" edge="1" parent="2" source="14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="16">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        
+        <!-- Title -->
+        <mxCell id="18" value="Gambar 3.4 - Flowchart Proses Analisis Struk dengan Gemini API" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=14;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="660" width="450" height="30" as="geometry" />
+        </mxCell>
+        
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

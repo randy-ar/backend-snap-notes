@@ -2,13 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, ForbiddenException, UnprocessableEntityException, ServiceUnavailableException } from '@nestjs/common';
 import { StrukService } from './struk.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { GeminiService } from '../common/gemini/gemini.service';
+import { LLMFactory } from '../common/llm/llm.factory';
 import { StorageService } from '../common/storage/storage.service';
+import type { ILLMProvider } from '../common/llm/llm-provider.interface';
 
 describe('StrukService', () => {
   let service: StrukService;
   let prismaService: any;
-  let geminiService: any;
+  let llmFactory: LLMFactory;
+  let llmProvider: jest.Mocked<ILLMProvider>;
   let storageService: any;
 
   const mockPenggunaId = 'user-123';
@@ -73,11 +75,19 @@ describe('StrukService', () => {
     kategori: {
       findFirst: jest.fn(),
     },
+    pengguna: {
+      findUnique: jest.fn(),
+    },
     $transaction: jest.fn(),
   });
 
-  const mockGeminiService = () => ({
+  const mockLLMProvider = () => ({
     parseStrukOCR: jest.fn(),
+  });
+
+  const mockLLMFactory = (provider: jest.Mocked<ILLMProvider>) => ({
+    getProvider: jest.fn().mockReturnValue(provider),
+    getProviderType: jest.fn().mockReturnValue('gemini'),
   });
 
   const mockStorageService = () => ({
@@ -87,6 +97,7 @@ describe('StrukService', () => {
 
   beforeEach(async () => {
     const mockPrisma = createMockPrismaService();
+    llmProvider = mockLLMProvider() as jest.Mocked<ILLMProvider>;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -96,8 +107,8 @@ describe('StrukService', () => {
           useValue: mockPrisma,
         },
         {
-          provide: GeminiService,
-          useValue: mockGeminiService(),
+          provide: LLMFactory,
+          useValue: mockLLMFactory(llmProvider),
         },
         {
           provide: StorageService,
@@ -108,7 +119,7 @@ describe('StrukService', () => {
 
     service = module.get<StrukService>(StrukService);
     prismaService = module.get(PrismaService);
-    geminiService = module.get(GeminiService);
+    llmFactory = module.get(LLMFactory);
     storageService = module.get(StorageService);
   });
 
@@ -127,8 +138,9 @@ describe('StrukService', () => {
       const dto = { ocrData: JSON.stringify(mockOcrData) };
       const storageResult = { path: 'struk/test.jpg', publicUrl: 'http://test.com/test.jpg' };
 
-      geminiService.parseStrukOCR.mockResolvedValue(mockParsedData);
+      llmProvider.parseStrukOCR.mockResolvedValue(mockParsedData);
       storageService.uploadGambarStruk.mockResolvedValue(storageResult);
+      prismaService.pengguna.findUnique.mockResolvedValue({ id: mockPenggunaId, email: 'test@test.com' });
 
       const createdStruk = {
         id: mockStrukId,
@@ -175,7 +187,7 @@ describe('StrukService', () => {
 
       const result = await service.scanStruk(mockPenggunaId, mockFile, dto);
 
-      expect(geminiService.parseStrukOCR).toHaveBeenCalledWith(
+      expect(llmProvider.parseStrukOCR).toHaveBeenCalledWith(
         mockOcrData.rawText,
         mockOcrData.lines,
         mockOcrData.imageSize
@@ -185,7 +197,7 @@ describe('StrukService', () => {
       expect(result.namaToko).toBe('Indomaret');
     });
 
-    it('should throw ServiceUnavailableException when Gemini fails', async () => {
+    it('should throw ServiceUnavailableException when LLM provider fails', async () => {
       const mockFile = {
         buffer: Buffer.from('test'),
         originalname: 'test.jpg',
@@ -193,7 +205,8 @@ describe('StrukService', () => {
       const mockOcrData = createMockOcrData();
       const dto = { ocrData: JSON.stringify(mockOcrData) };
 
-      geminiService.parseStrukOCR.mockRejectedValue(new ServiceUnavailableException('AI Error'));
+      prismaService.pengguna.findUnique.mockResolvedValue({ id: mockPenggunaId, email: 'test@test.com' });
+      llmProvider.parseStrukOCR.mockRejectedValue(new ServiceUnavailableException('AI Error'));
 
       await expect(service.scanStruk(mockPenggunaId, mockFile, dto)).rejects.toThrow(ServiceUnavailableException);
     });
@@ -206,7 +219,8 @@ describe('StrukService', () => {
       const mockOcrData = createMockOcrData();
       const dto = { ocrData: JSON.stringify(mockOcrData) };
 
-      geminiService.parseStrukOCR.mockRejectedValue(new UnprocessableEntityException('Invalid JSON'));
+      prismaService.pengguna.findUnique.mockResolvedValue({ id: mockPenggunaId, email: 'test@test.com' });
+      llmProvider.parseStrukOCR.mockRejectedValue(new UnprocessableEntityException('Invalid JSON'));
 
       await expect(service.scanStruk(mockPenggunaId, mockFile, dto)).rejects.toThrow(UnprocessableEntityException);
     });
@@ -218,6 +232,8 @@ describe('StrukService', () => {
       } as Express.Multer.File;
       const dto = { ocrData: 'invalid json' };
 
+      prismaService.pengguna.findUnique.mockResolvedValue({ id: mockPenggunaId, email: 'test@test.com' });
+
       await expect(service.scanStruk(mockPenggunaId, mockFile, dto)).rejects.toThrow(UnprocessableEntityException);
     });
 
@@ -227,6 +243,8 @@ describe('StrukService', () => {
         originalname: 'test.jpg',
       } as Express.Multer.File;
       const dto = { ocrData: JSON.stringify({ rawText: 'test' }) }; // missing lines
+
+      prismaService.pengguna.findUnique.mockResolvedValue({ id: mockPenggunaId, email: 'test@test.com' });
 
       await expect(service.scanStruk(mockPenggunaId, mockFile, dto)).rejects.toThrow(UnprocessableEntityException);
     });
@@ -283,15 +301,21 @@ describe('StrukService', () => {
         gambarStoragePath: 'struk/test.jpg',
       };
 
+      const mockTx = {
+        pengeluaran: { deleteMany: jest.fn().mockResolvedValue(undefined) },
+        itemStruk: { deleteMany: jest.fn().mockResolvedValue(undefined) },
+        struk: { delete: jest.fn().mockResolvedValue(undefined) },
+      };
+
       prismaService.struk.findUnique.mockResolvedValue(mockStruk as any);
-      prismaService.$transaction.mockResolvedValue(undefined);
+      prismaService.$transaction.mockImplementation(async (callback: any) => callback(mockTx));
       storageService.hapusGambar.mockResolvedValue(undefined);
 
       await service.hapusStruk(mockPenggunaId, mockStrukId);
 
-      expect(prismaService.pengeluaran.deleteMany).toHaveBeenCalled();
-      expect(prismaService.itemStruk.deleteMany).toHaveBeenCalled();
-      expect(prismaService.struk.delete).toHaveBeenCalled();
+      expect(mockTx.pengeluaran.deleteMany).toHaveBeenCalledWith({ where: { strukId: mockStrukId } });
+      expect(mockTx.itemStruk.deleteMany).toHaveBeenCalledWith({ where: { strukId: mockStrukId } });
+      expect(mockTx.struk.delete).toHaveBeenCalledWith({ where: { id: mockStrukId } });
       expect(storageService.hapusGambar).toHaveBeenCalledWith('struk/test.jpg');
     });
 
@@ -391,6 +415,37 @@ describe('StrukService', () => {
             lte: new Date(2026, 5, 0),
           },
         },
+        include: {
+          kategori: true,
+          itemStruks: { include: { kategori: true } },
+        },
+        orderBy: { tanggalBelanja: 'desc' },
+      });
+    });
+
+    it('should return empty array when user has no struk', async () => {
+      prismaService.struk.findMany.mockResolvedValue([]);
+
+      const result = await service.getDaftarStruk(mockPenggunaId);
+
+      expect(result).toHaveLength(0);
+      expect(prismaService.struk.findMany).toHaveBeenCalledWith({
+        where: { penggunaId: mockPenggunaId },
+        include: {
+          kategori: true,
+          itemStruks: { include: { kategori: true } },
+        },
+        orderBy: { tanggalBelanja: 'desc' },
+      });
+    });
+
+    it('should not apply date filter when only bulan is provided (without tahun)', async () => {
+      prismaService.struk.findMany.mockResolvedValue([]);
+
+      await service.getDaftarStruk(mockPenggunaId, { bulan: 5 });
+
+      expect(prismaService.struk.findMany).toHaveBeenCalledWith({
+        where: { penggunaId: mockPenggunaId },
         include: {
           kategori: true,
           itemStruks: { include: { kategori: true } },

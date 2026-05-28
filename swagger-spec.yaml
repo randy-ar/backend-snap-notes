@@ -183,13 +183,15 @@ paths:
       operationId: StrukController_getDaftarStruk
       parameters:
         - name: bulan
-          required: true
+          required: false
           in: query
+          description: Filter berdasarkan bulan (1-12)
           schema:
             type: string
         - name: tahun
-          required: true
+          required: false
           in: query
+          description: 'Filter berdasarkan tahun (contoh: 2026)'
           schema:
             type: string
       responses:
