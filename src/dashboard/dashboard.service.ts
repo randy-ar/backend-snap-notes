@@ -18,8 +18,8 @@ export class DashboardService {
     const tahun = query.tahun ? parseInt(query.tahun, 10) : now.getFullYear();
 
     // Buat range tanggal untuk filter
-    const startDate = new Date(tahun, bulan - 1, 1);
-    const endDate = new Date(tahun, bulan, 0, 23, 59, 59, 999);
+    const startDate = new Date(Date.UTC(tahun, bulan - 1, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(tahun, bulan, 0, 23, 59, 59, 999));
 
     this.logger.debug(
       `Menghitung ringkasan untuk pengguna ${penggunaId} periode ${bulan}/${tahun} (${startDate.toISOString()} - ${endDate.toISOString()})`,
@@ -62,5 +62,41 @@ export class DashboardService {
       totalPengeluaran,
       saldo,
     };
+  }
+
+  async getTrend(
+    penggunaId: string,
+    query: QueryDashboardDto,
+  ): Promise<any[]> {
+    const now = new Date();
+    const focusBulan = query.bulan ? parseInt(query.bulan, 10) : now.getMonth() + 1;
+    const focusTahun = query.tahun ? parseInt(query.tahun, 10) : now.getFullYear();
+    const focusDate = new Date(focusTahun, focusBulan - 1, 1);
+
+    const months: { bulan: number; tahun: number; date: Date }[] = [];
+    for (let i = -18; i <= 18; i++) {
+      const d = new Date(focusDate.getFullYear(), focusDate.getMonth() + i, 1);
+      months.push({ bulan: d.getMonth() + 1, tahun: d.getFullYear(), date: d });
+    }
+
+    const results = await Promise.all(
+      months.map((m) => {
+        const dto = new QueryDashboardDto();
+        dto.bulan = m.bulan.toString();
+        dto.tahun = m.tahun.toString();
+        return this.getRingkasan(penggunaId, dto);
+      }),
+    );
+
+    return months.map((m, index) => {
+      const res = results[index];
+      return {
+        bulan: m.bulan,
+        tahun: m.tahun,
+        totalPemasukan: res.totalPemasukan,
+        totalPengeluaran: res.totalPengeluaran,
+        dateTime: m.date.toISOString(),
+      };
+    });
   }
 }

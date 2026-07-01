@@ -74,6 +74,7 @@ describe('StrukService', () => {
     },
     kategori: {
       findFirst: jest.fn(),
+      findMany: jest.fn().mockResolvedValue([]),
     },
     pengguna: {
       findUnique: jest.fn(),
@@ -190,7 +191,9 @@ describe('StrukService', () => {
       expect(llmProvider.parseStrukOCR).toHaveBeenCalledWith(
         mockOcrData.rawText,
         mockOcrData.lines,
-        mockOcrData.imageSize
+        mockOcrData.imageSize,
+        undefined,
+        ""
       );
       expect(storageService.uploadGambarStruk).toHaveBeenCalled();
       expect(result).toBeDefined();

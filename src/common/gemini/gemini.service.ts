@@ -92,7 +92,7 @@ export class GeminiService {
       throw new Error('GEMINI_API_KEY harus diatur di environment variables');
     }
     this.genAI = new GoogleGenAI({ apiKey });
-    this.model = 'gemini-2.5-flash';
+    this.model = 'gemini-1.5-flash-8b';
   }
 
   async parseStrukOCR(rawText: string, lines?: OcrLine[], imageSize?: ImageSize): Promise<ParsedStrukDto> {

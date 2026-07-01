@@ -4,6 +4,7 @@ import { LLMFactory } from '../common/llm/llm.factory';
 import { ParsedStrukDto } from '../common/llm/llm-provider.interface';
 import { StorageService } from '../common/storage/storage.service';
 import { ScanStrukDto, OcrDataDto } from './dto/scan-struk.dto';
+import { ReparseStrukDto } from './dto/reparse-struk.dto';
 import { UpdateStrukDto } from './dto/update-struk.dto';
 import { StrukResponseDto, ItemStrukResponseDto } from './dto/struk-response.dto';
 
@@ -44,10 +45,13 @@ export class StrukService {
     const llmProvider = this.llmFactory.getProvider();
 
     try {
+      const kategoriContext = await this.getKategoriContext(penggunaId);
       parsedData = await llmProvider.parseStrukOCR(
         ocrData.rawText,
         ocrData.lines,
-        ocrData.imageSize
+        ocrData.imageSize,
+        ocrData.customPrompt,
+        kategoriContext
       );
     } catch (error) {
       if (error instanceof ServiceUnavailableException || error instanceof UnprocessableEntityException) {
@@ -60,16 +64,67 @@ export class StrukService {
 
     if (file) {
       try {
-        storageResult = await this.storageService.uploadGambarStruk(file.buffer, file.originalname);
+        storageResult = await this.storageService.uploadGambarStruk(file.buffer, file.originalname, penggunaId);
       } catch (error) {
         console.error('Error uploading image to Supabase:', error);
         throw new ServiceUnavailableException(`Gagal mengupload gambar struk: ${error.message}`);
       }
     }
 
-    let kategoriId: string | null = null;
-    if (parsedData.kategori_toko) {
-      const kategori = await this.prisma.kategori.findFirst({
+    // Resolusi kategori untuk setiap item struk dan tentukan kategori utama struk
+    const resolvedItems: {
+      nama: string;
+      jumlah: number;
+      hargaSatuan: number;
+      subtotal: number;
+      kategoriId: string | null;
+    }[] = [];
+    const subtotalPerKategori: Record<string, number> = {};
+
+    for (const item of parsedData.item) {
+      let itemKategoriId: string | null = null;
+
+      if (item.kategori) {
+        const itemKategori = await this.prisma.kategori.findFirst({
+          where: {
+            OR: [
+              { nama: { contains: item.kategori, mode: 'insensitive' }, adalahPreset: true },
+              { nama: { contains: item.kategori, mode: 'insensitive' }, penggunaId },
+            ],
+          },
+        });
+        itemKategoriId = itemKategori?.id || null;
+      }
+
+      const subtotal = item.subtotal || (item.jumlah * item.harga_satuan);
+      if (itemKategoriId) {
+        subtotalPerKategori[itemKategoriId] = (subtotalPerKategori[itemKategoriId] || 0) + subtotal;
+      }
+
+      resolvedItems.push({
+        nama: item.nama,
+        jumlah: item.jumlah,
+        hargaSatuan: item.harga_satuan,
+        subtotal,
+        kategoriId: itemKategoriId,
+      });
+    }
+
+    // Cari kategori item yang dominan (subtotal terbesar)
+    let dominanKategoriId: string | null = null;
+    let maxSubtotal = -1;
+    for (const [catId, subtotal] of Object.entries(subtotalPerKategori)) {
+      if (subtotal > maxSubtotal) {
+        maxSubtotal = subtotal;
+        dominanKategoriId = catId;
+      }
+    }
+
+    let kategoriId: string | null = dominanKategoriId;
+
+    // Fallback 1: Jika tidak ada kategori item, gunakan kategori_toko
+    if (!kategoriId && parsedData.kategori_toko) {
+      const kategoriToko = await this.prisma.kategori.findFirst({
         where: {
           OR: [
             { nama: { contains: parsedData.kategori_toko, mode: 'insensitive' }, adalahPreset: true },
@@ -77,7 +132,19 @@ export class StrukService {
           ],
         },
       });
-      kategoriId = kategori?.id || null;
+      kategoriId = kategoriToko?.id || null;
+    }
+
+    // Fallback 2: Jika masih null, gunakan kategori 'Lainnya' (PENGELUARAN)
+    if (!kategoriId) {
+      const kategoriLainnya = await this.prisma.kategori.findFirst({
+        where: {
+          nama: 'Lainnya',
+          jenis: 'PENGELUARAN',
+          adalahPreset: true,
+        },
+      });
+      kategoriId = kategoriLainnya?.id || null;
     }
 
     const struk = await this.prisma.$transaction(async (tx) => {
@@ -98,37 +165,23 @@ export class StrukService {
         },
       });
 
-      const items = [];
-      for (const item of parsedData.item) {
-        let itemKategoriId: string | null = null;
-        if (item.kategori) {
-          const itemKategori = await tx.kategori.findFirst({
-            where: {
-              OR: [
-                { nama: { contains: item.kategori, mode: 'insensitive' }, adalahPreset: true },
-                { nama: { contains: item.kategori, mode: 'insensitive' }, penggunaId },
-              ],
+      const items = await Promise.all(
+        resolvedItems.map(resolvedItem => 
+          tx.itemStruk.create({
+            data: {
+              strukId: createdStruk.id,
+              kategoriId: resolvedItem.kategoriId,
+              namaItem: resolvedItem.nama,
+              jumlah: resolvedItem.jumlah,
+              hargaSatuan: resolvedItem.hargaSatuan,
+              subtotal: resolvedItem.subtotal,
             },
-          });
-          itemKategoriId = itemKategori?.id || null;
-        }
-
-        const createdItem = await tx.itemStruk.create({
-          data: {
-            strukId: createdStruk.id,
-            kategoriId: itemKategoriId,
-            namaItem: item.nama,
-            jumlah: item.jumlah,
-            hargaSatuan: item.harga_satuan,
-            subtotal: item.subtotal || item.jumlah * item.harga_satuan,
-          },
-          include: {
-            kategori: true,
-          },
-        });
-        
-        items.push(createdItem);
-      }
+            include: {
+              kategori: true,
+            },
+          })
+        )
+      );
 
       await tx.pengeluaran.create({
         data: {
@@ -142,12 +195,191 @@ export class StrukService {
       });
 
       return { ...createdStruk, itemStruks: items };
-    });
+    }, { timeout: 15000 });
 
     const endTime = Date.now();
     console.log(`[scanStruk] Completed in ${endTime - startTime}ms for penggunaId: ${penggunaId}`);
 
     return this.mapToResponseDto(struk);
+  }
+
+  async reparseStruk(penggunaId: string, id: string, dto: ReparseStrukDto): Promise<StrukResponseDto> {
+    const startTime = Date.now();
+
+    const existingStruk = await this.prisma.struk.findUnique({
+      where: { id },
+    });
+
+    if (!existingStruk) {
+      throw new NotFoundException('Struk tidak ditemukan');
+    }
+
+    if (existingStruk.penggunaId !== penggunaId) {
+      throw new ForbiddenException('Anda tidak memiliki akses ke struk ini');
+    }
+
+    if (!existingStruk.rawTextOcr) {
+      throw new UnprocessableEntityException('Data OCR tidak tersedia untuk struk ini');
+    }
+
+    let ocrData: OcrDataDto;
+    try {
+      ocrData = JSON.parse(existingStruk.rawTextOcr) as OcrDataDto;
+    } catch {
+      throw new UnprocessableEntityException('Format ocrData JSON tidak valid pada struk yang ada');
+    }
+
+    let parsedData: ParsedStrukDto;
+    const llmProvider = this.llmFactory.getProvider();
+
+    try {
+      const kategoriContext = await this.getKategoriContext(penggunaId);
+      parsedData = await llmProvider.parseStrukOCR(
+        ocrData.rawText,
+        ocrData.lines,
+        ocrData.imageSize,
+        dto.prompt,
+        kategoriContext
+      );
+    } catch (error) {
+      if (error instanceof ServiceUnavailableException || error instanceof UnprocessableEntityException) {
+        throw error;
+      }
+      throw new ServiceUnavailableException('Gagal memproses ulang struk dengan AI');
+    }
+
+    // Resolusi kategori untuk setiap item struk dan tentukan kategori utama struk
+    const resolvedItems: {
+      nama: string;
+      jumlah: number;
+      hargaSatuan: number;
+      subtotal: number;
+      kategoriId: string | null;
+    }[] = [];
+    const subtotalPerKategori: Record<string, number> = {};
+
+    for (const item of parsedData.item) {
+      let itemKategoriId: string | null = null;
+
+      if (item.kategori) {
+        const itemKategori = await this.prisma.kategori.findFirst({
+          where: {
+            OR: [
+              { nama: { contains: item.kategori, mode: 'insensitive' }, adalahPreset: true },
+              { nama: { contains: item.kategori, mode: 'insensitive' }, penggunaId },
+            ],
+          },
+        });
+        itemKategoriId = itemKategori?.id || null;
+      }
+
+      const subtotal = item.subtotal || (item.jumlah * item.harga_satuan);
+      if (itemKategoriId) {
+        subtotalPerKategori[itemKategoriId] = (subtotalPerKategori[itemKategoriId] || 0) + subtotal;
+      }
+
+      resolvedItems.push({
+        nama: item.nama,
+        jumlah: item.jumlah,
+        hargaSatuan: item.harga_satuan,
+        subtotal,
+        kategoriId: itemKategoriId,
+      });
+    }
+
+    // Cari kategori item yang dominan (subtotal terbesar)
+    let dominanKategoriId: string | null = null;
+    let maxSubtotal = -1;
+    for (const [catId, subtotal] of Object.entries(subtotalPerKategori)) {
+      if (subtotal > maxSubtotal) {
+        maxSubtotal = subtotal;
+        dominanKategoriId = catId;
+      }
+    }
+
+    let kategoriId: string | null = dominanKategoriId;
+
+    // Fallback 1: Jika tidak ada kategori item, gunakan kategori_toko
+    if (!kategoriId && parsedData.kategori_toko) {
+      const kategoriToko = await this.prisma.kategori.findFirst({
+        where: {
+          OR: [
+            { nama: { contains: parsedData.kategori_toko, mode: 'insensitive' }, adalahPreset: true },
+            { nama: { contains: parsedData.kategori_toko, mode: 'insensitive' }, penggunaId },
+          ],
+        },
+      });
+      kategoriId = kategoriToko?.id || null;
+    }
+
+    // Fallback 2: Jika masih null, gunakan kategori 'Lainnya' (PENGELUARAN)
+    if (!kategoriId) {
+      const kategoriLainnya = await this.prisma.kategori.findFirst({
+        where: {
+          nama: 'Lainnya',
+          jenis: 'PENGELUARAN',
+          adalahPreset: true,
+        },
+      });
+      kategoriId = kategoriLainnya?.id || null;
+    }
+
+    const updatedStruk = await this.prisma.$transaction(async (tx) => {
+      // Delete existing itemStruks
+      await tx.itemStruk.deleteMany({
+        where: { strukId: id },
+      });
+
+      // Update Struk
+      const strukResult = await tx.struk.update({
+        where: { id },
+        data: {
+          kategoriId,
+          namaToko: parsedData.nama_toko,
+          tanggalBelanja: new Date(parsedData.tanggal),
+          total: parsedData.total,
+        },
+        include: {
+          kategori: true,
+        },
+      });
+
+      const items = await Promise.all(
+        resolvedItems.map(resolvedItem => 
+          tx.itemStruk.create({
+            data: {
+              strukId: id,
+              kategoriId: resolvedItem.kategoriId,
+              namaItem: resolvedItem.nama,
+              jumlah: resolvedItem.jumlah,
+              hargaSatuan: resolvedItem.hargaSatuan,
+              subtotal: resolvedItem.subtotal,
+            },
+            include: {
+              kategori: true,
+            },
+          })
+        )
+      );
+
+      // Update Pengeluaran
+      await tx.pengeluaran.updateMany({
+        where: { strukId: id },
+        data: {
+          kategoriId,
+          deskripsi: `Pembelian di ${parsedData.nama_toko}`,
+          jumlah: parsedData.total,
+          tanggal: new Date(parsedData.tanggal),
+        },
+      });
+
+      return { ...strukResult, itemStruks: items };
+    }, { timeout: 15000 });
+
+    const endTime = Date.now();
+    console.log(`[reparseStruk] Completed in ${endTime - startTime}ms for penggunaId: ${penggunaId}, strukId: ${id}`);
+
+    return this.mapToResponseDto(updatedStruk);
   }
 
   async getDaftarStruk(penggunaId: string, query?: { bulan?: number; tahun?: number }): Promise<StrukResponseDto[]> {
@@ -330,5 +562,55 @@ export class StrukService {
       createdAt: struk.createdAt,
       updatedAt: struk.updatedAt,
     };
+  }
+
+  private async getKategoriContext(penggunaId: string): Promise<string> {
+    const kategoris = await this.prisma.kategori.findMany({
+      where: {
+        OR: [
+          { adalahPreset: true },
+          { penggunaId },
+        ],
+      },
+      orderBy: {
+        jenis: 'asc',
+      },
+    });
+
+    const presetDescriptions: Record<string, string> = {
+      'Makanan': 'Makan berat, restoran, warteg, jajan',
+      'Minuman': 'Kopi, boba, kafe, air mineral',
+      'Sembako': 'Beras, telur, minyak goreng, bumbu, kebutuhan dapur',
+      'Transportasi': 'Bensin, parkir, tiket travel/kereta, ojol',
+      'Komunikasi': 'Pulsa fisik, voucher internet, warnet',
+      'Edukasi': 'Alat tulis, fotokopi, buku, print',
+      'Perawatan': 'Skincare, kosmetik, sabun, salon',
+      'Pakaian': 'Baju, celana, sepatu, tas, aksesoris',
+      'Hiburan': 'Tiket bioskop, tempat bermain, karaoke',
+      'Kesehatan': 'Apotek, obat-obatan, vitamin, klinik',
+      'Elektronik': 'Aksesoris HP, kabel, servis laptop, gadget',
+      'Otomotif': 'Bengkel, ganti oli, cuci motor/mobil, sparepart',
+      'Lainnya': 'Pengeluaran/Pemasukan lain yang tak terduga',
+      'Saku': 'Uang jatah bulanan/mingguan dari orang tua',
+      'Gaji': 'Hasil part-time, pekerjaan tetap, upah',
+      'Beasiswa': 'Pencairan dana beasiswa',
+      'Bonus': 'Uang kaget, hadiah, THR, cashback besar',
+      'Bisnis': 'Hasil jualan barang/jasa, keuntungan dagang',
+      'Transfer': 'Mutasi antar rekening, top-up e-wallet',
+      'Utang': 'Meminjam uang dari orang lain/institusi',
+      'Piutang': 'Meminjamkan uang ke orang lain',
+    };
+
+    const lines = kategoris.map(k => {
+      let desc = '';
+      if (k.adalahPreset && presetDescriptions[k.nama]) {
+        desc = ` - ${presetDescriptions[k.nama]}`;
+      } else if (!k.adalahPreset) {
+        desc = ` - (Kategori kustom user)`;
+      }
+      return `- ${k.nama} [Tipe: ${k.jenis}]${desc}`;
+    });
+
+    return lines.join('\n');
   }
 }

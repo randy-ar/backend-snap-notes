@@ -8,13 +8,14 @@ async function test() {
   
   const buffer = Buffer.from('fake image content');
   
-  console.log("Trying to upload a buffer...");
-  const { data, error } = await client.storage.from('struk-images').upload('struk/test-image.jpg', buffer, {
-    contentType: 'image/jpeg',
-    upsert: false,
-  });
+  // Upload first time
+  await client.storage.from('struk-images').upload('struk/duplicate.jpg', buffer, { upsert: false });
+  
+  // Upload second time (duplicate)
+  const { data, error } = await client.storage.from('struk-images').upload('struk/duplicate.jpg', buffer, { upsert: false });
+  
   if (error) {
-    console.error("Upload Error:", error);
+    console.error("Duplicate Error:", error.message);
   } else {
     console.log("Upload Success:", data);
   }

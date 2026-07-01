@@ -9,6 +9,8 @@ import { StrukModule } from './struk/struk.module';
 import { PengeluaranModule } from './pengeluaran/pengeluaran.module';
 import { PemasukanModule } from './pemasukan/pemasukan.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { NotifikasiModule } from './notifikasi/notifikasi.module';
+import { KategoriModule } from './kategori/kategori.module';
 
 @Module({
   imports: [
@@ -25,6 +27,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     PengeluaranModule,
     PemasukanModule,
     DashboardModule,
+    NotifikasiModule,
+    KategoriModule,
   ],
   controllers: [],
   providers: [],

@@ -17,9 +17,9 @@ describe('PemasukanService', () => {
           useValue: {
             pemasukan: {
               create: jest.fn(),
-            }, */ */ */
-          }, */ */
-        }, */
+            },
+          },
+        },
       ],
     }).compile();
 
@@ -65,10 +65,10 @@ describe('PemasukanService', () => {
           tanggal: new Date(dto.tanggal),
           kategoriId: undefined,
           catatan: undefined,
-        }, */
+        },
         include: {
           kategori: true,
-        }, */
+        },
       });
 
       expect(result).toEqual({

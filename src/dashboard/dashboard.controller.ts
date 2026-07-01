@@ -34,4 +34,21 @@ export class DashboardController {
     const penggunaId = req.user.sub;
     return this.dashboardService.getRingkasan(penggunaId, query);
   }
+
+  @Get('trend')
+  @ApiOperation({
+    summary: 'Mendapatkan tren ringkasan dashboard selama 6 bulan terakhir',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tren berhasil diambil',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getTrend(
+    @Req() req: any,
+    @Query() query: QueryDashboardDto,
+  ): Promise<any[]> {
+    const penggunaId = req.user.sub;
+    return this.dashboardService.getTrend(penggunaId, query);
+  }
 }

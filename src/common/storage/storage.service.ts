@@ -12,9 +12,9 @@ export class StorageService {
 
   constructor(private supabaseService: SupabaseService) {}
 
-  async uploadGambarStruk(file: Buffer, fileName: string): Promise<StorageResultDto> {
+  async uploadGambarStruk(file: Buffer, fileName: string, penggunaId: string): Promise<StorageResultDto> {
     const client = this.supabaseService.getClient();
-    const path = `struk/${Date.now()}-${fileName}`;
+    const path = `${penggunaId}/struk/${Date.now()}-${fileName}`;
     
     const { error } = await client.storage
       .from(this.bucketName)

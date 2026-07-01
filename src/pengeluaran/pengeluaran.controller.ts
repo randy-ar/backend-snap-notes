@@ -33,16 +33,29 @@ export class PengeluaranController {
     return this.pengeluaranService.tambah(req.user.id, dto);
   }
 
+  @Get('overview')
+  @UseGuards(SupabaseAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mendapatkan ringkasan pengeluaran (total bulan ini, perubahan persentase)' })
+  @ApiResponse({ status: 200, description: 'Ringkasan berhasil diambil' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getOverview(
+    @Req() req: RequestWithUser,
+    @Query() query: QueryPengeluaranDto,
+  ): Promise<any> {
+    return this.pengeluaranService.getOverview(req.user.id, query);
+  }
+
   @Get()
   @UseGuards(SupabaseAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Mendapatkan daftar pengeluaran (bisa difilter bulan/tahun)' })
-  @ApiResponse({ status: 200, description: 'Daftar pengeluaran berhasil diambil', type: [PengeluaranResponseDto] })
+  @ApiOperation({ summary: 'Mendapatkan daftar pengeluaran (bisa difilter bulan/tahun, paginasi)' })
+  @ApiResponse({ status: 200, description: 'Daftar pengeluaran berhasil diambil' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getDaftar(
     @Req() req: RequestWithUser,
     @Query() query: QueryPengeluaranDto,
-  ): Promise<PengeluaranResponseDto[]> {
+  ): Promise<any> {
     return this.pengeluaranService.getDaftar(req.user.id, query);
   }
 

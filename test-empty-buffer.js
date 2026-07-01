@@ -6,10 +6,10 @@ async function test() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const client = createClient(url, key);
   
-  const buffer = Buffer.from('fake image content');
+  const buffer = Buffer.from('');
   
-  console.log("Trying to upload a buffer...");
-  const { data, error } = await client.storage.from('struk-images').upload('struk/test-image.jpg', buffer, {
+  console.log("Trying to upload an empty buffer...");
+  const { data, error } = await client.storage.from('struk-images').upload('struk/test-empty.jpg', buffer, {
     contentType: 'image/jpeg',
     upsert: false,
   });

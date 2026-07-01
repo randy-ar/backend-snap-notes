@@ -40,9 +40,9 @@ export class OpenRouterService implements ILLMProvider {
     this.timeoutMs = this.configService.get<number>('OPENROUTER_TIMEOUT_MS') || 28000;
   }
 
-  async parseStrukOCR(rawText: string, lines?: OcrLine[], imageSize?: ImageSize): Promise<ParsedStrukDto> {
+  async parseStrukOCR(rawText: string, lines?: OcrLine[], imageSize?: ImageSize, customPrompt?: string, kategoriContext?: string): Promise<ParsedStrukDto> {
     try {
-      const prompt = this.buatPrompt(rawText, lines, imageSize);
+      const prompt = this.buatPrompt(rawText, lines, imageSize, customPrompt, kategoriContext);
       const messages: OpenRouterMessage[] = [
         {
           role: 'system',
@@ -105,7 +105,7 @@ export class OpenRouterService implements ILLMProvider {
     return response.json() as Promise<OpenRouterResponse>;
   }
 
-  private buatPrompt(rawText: string, lines?: OcrLine[], imageSize?: ImageSize): string {
+  private buatPrompt(rawText: string, lines?: OcrLine[], imageSize?: ImageSize, customPrompt?: string, kategoriContext?: string): string {
     let layoutInfo = '';
 
     if (lines && lines.length > 0 && imageSize) {
@@ -141,6 +141,7 @@ TEKS OCR:
 ${rawText}
 """${layoutInfo}
 
+${customPrompt ? `KONTEKS TAMBAHAN DARI USER UNTUK KOREKSI:\n"""\n${customPrompt}\n"""\n` : ''}
 Ekstrak informasi berikut dalam format JSON:
 {
   "nama_toko": "Nama toko/merchant",
@@ -167,7 +168,7 @@ Aturan WAJIB:
 6. Tanggal harus dalam format YYYY-MM-DD (konversi dari format Indonesia DD-MM-YYYY atau DD/MM/YYYY)
 7. Total adalah angka total keseluruhan struk (bukan subtotal item)
 8. Harga dalam format number tanpa pemisah ribuan (contoh: 10500 bukan 10.500)
-9. Kategori bisa: Makanan & Minuman, Transportasi, Kesehatan, Pendidikan, Hiburan, Rumah Tangga, Pakaian & Aksesoris, Belanja Online, Lainnya
+9. ${kategoriContext ? `Gunakan kategori berikut jika sesuai:\n${kategoriContext}` : `Kategori bisa: Makanan, Minuman, Transportasi, Kesehatan, Edukasi, Hiburan, Hunian, Pakaian, Belanja, Lainnya`}
 10. Pastikan jumlah * harga_satuan = subtotal untuk setiap item
 11. Gunakan info posisi X untuk membedakan kolom: kiri=item, tengah=qty, kanan=harga
 12. Jika ada teks seperti "1 5,000" di posisi tengah+kanan, interpretasikan sebagai qty=1, harga=5000
@@ -185,6 +186,10 @@ Aturan WAJIB:
 
       if (!parsed.nama_toko || !parsed.tanggal || typeof parsed.total !== 'number') {
         throw new UnprocessableEntityException('Response AI tidak lengkap: nama_toko, tanggal, dan total wajib ada');
+      }
+
+      if (parsed.items && Array.isArray(parsed.items) && !parsed.item) {
+        parsed.item = parsed.items;
       }
 
       if (!Array.isArray(parsed.item) || parsed.item.length === 0) {

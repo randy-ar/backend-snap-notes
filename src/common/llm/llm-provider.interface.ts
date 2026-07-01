@@ -31,5 +31,5 @@ export interface ImageSize {
 }
 
 export interface ILLMProvider {
-  parseStrukOCR(rawText: string, lines?: OcrLine[], imageSize?: ImageSize): Promise<ParsedStrukDto>;
+  parseStrukOCR(rawText: string, lines?: OcrLine[], imageSize?: ImageSize, customPrompt?: string, kategoriContext?: string): Promise<ParsedStrukDto>;
 }

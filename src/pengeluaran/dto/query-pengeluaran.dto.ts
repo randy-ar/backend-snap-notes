@@ -17,4 +17,19 @@ export class QueryPengeluaranDto {
   @IsInt()
   @Min(2000)
   tahun?: number;
+
+  @ApiPropertyOptional({ description: 'Halaman untuk paginasi (default: 1)', example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Jumlah item per halaman (default: 10)', example: 10 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }

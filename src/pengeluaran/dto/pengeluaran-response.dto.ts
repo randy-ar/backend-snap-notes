@@ -16,6 +16,9 @@ export class PengeluaranResponseDto {
   @ApiPropertyOptional({ description: 'Nama kategori' })
   kategoriNama?: string;
 
+  @ApiPropertyOptional({ description: 'Objek kategori lengkap' })
+  kategori?: any;
+
   @ApiProperty({ description: 'Deskripsi pengeluaran' })
   deskripsi: string;
 

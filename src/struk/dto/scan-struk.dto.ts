@@ -61,6 +61,11 @@ export class OcrDataDto {
   @IsNumber()
   linesCount?: number;
 
+  @ApiProperty({ description: 'Prompt kustom opsional dari user untuk AI', required: false })
+  @IsOptional()
+  @IsString()
+  customPrompt?: string;
+
   @ApiProperty({ description: 'Array lines dengan posisi dan index', type: [OcrLineDto] })
   @IsArray()
   @ValidateNested({ each: true })
